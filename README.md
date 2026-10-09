@@ -12,6 +12,7 @@ dock, GTK apps, GNOME Terminal, the accent color and the icons. Press
 | --- | --- | --- | --- | --- | --- |
 | [Dracula](https://draculatheme.com) | `#282a36` | `#f8f8f2` | `#bd93f9` | `#ff79c6` | purple |
 | [Everforest](https://github.com/sainnhe/everforest) (dark, medium) | `#2d353b` | `#d3c6aa` | `#a7c080` | `#83c092` | green |
+| [Nord](https://www.nordtheme.com) | `#2e3440` | `#eceff4` | `#88c0d0` | `#81a1c1` | blue |
 
 More themes are one TOML file each, see [Palettes](#palettes).
 

@@ -1,0 +1,25 @@
+name = "Nord"
+description = "An arctic, north-bluish color palette."
+gnome_accent = "blue"
+icon_color = ["nordic", "blue"]
+icon_tint = 0.2
+wallpaper = "wallpapers/nord/pyrenees-blue-hour.jpg"
+
+[colors]
+bg            = "#2e3440"
+bg_alt        = "#272c36"
+fg            = "#eceff4"
+surface       = "#434c5e"
+surface_hover = "#4c566a"
+card          = "#3b4252"
+card_alt      = "#353b49"
+card_hover    = "#434c5e"
+accent        = "#88c0d0"
+accent_hover  = "#9fcfdc"
+accent2       = "#81a1c1"
+heading       = "#8fbcbb"
+muted         = "#616e88"
+
+[terminal]
+palette = ["#3B4252", "#BF616A", "#A3BE8C", "#EBCB8B", "#81A1C1", "#B48EAD", "#88C0D0", "#E5E9F0",
+           "#4C566A", "#BF616A", "#A3BE8C", "#EBCB8B", "#81A1C1", "#B48EAD", "#8FBCBB", "#ECEFF4"]
