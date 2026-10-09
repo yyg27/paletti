@@ -34,6 +34,7 @@ EXTENSIONS = HOME / ".local/share/gnome-shell/extensions"
 THEME_CSS = HOME / ".local/share/themes/Islands/gnome-shell/gnome-shell.css"
 STATE = HOME / ".local/state/paletti/current"
 ICONS_PID = HOME / ".local/state/paletti/icons.pid"
+ICON_THEME_SWAP = HOME / ".local/state/paletti/icon-theme"  # exists only mid set_icon_theme
 CONFIG = HOME / ".config/paletti/config.toml"
 CHOSEN_WALLPAPER = HOME / ".local/state/paletti/wallpaper"  # one file per palette
 WALLPAPER_MODES = ("default", "chosen", "keep")
@@ -113,9 +114,14 @@ def find_icon_theme(name):
 def set_icon_theme(name):
     # Switching away and back makes running apps reload their icons. Without the
     # pause GNOME merges both changes into "unchanged" and keeps the old icons.
+    # The real name is kept on disk meanwhile: a job stopped mid-swap leaves
+    # Adwaita behind, and the next job reads it back from there.
+    ICON_THEME_SWAP.parent.mkdir(parents=True, exist_ok=True)
+    ICON_THEME_SWAP.write_text(name)
     sh("gsettings", "set", "org.gnome.desktop.interface", "icon-theme", "Adwaita")
     time.sleep(0.5)
     sh("gsettings", "set", "org.gnome.desktop.interface", "icon-theme", name)
+    ICON_THEME_SWAP.unlink()
 
 
 def mix(hex_color, accent, amount):
@@ -182,6 +188,8 @@ def recolor_tela(accent, tint=0.0):
 def recolor_icons(colors, accent, tint=0.0):
     """Recolors the active icon theme; returns a message when that is not possible."""
     theme = sh("gsettings", "get", "org.gnome.desktop.interface", "icon-theme").strip("'")
+    if theme == "Adwaita" and ICON_THEME_SWAP.exists():  # an earlier job was stopped mid-swap
+        theme = ICON_THEME_SWAP.read_text().strip()
     if theme.lower().startswith("adwaita"):
         return None  # Adwaita folders already follow the GNOME accent color.
     if theme in ("Tela-circle", "Tela-circle-dark", "Tela-circle-paletti", "Tela-circle-paletti-dark"):

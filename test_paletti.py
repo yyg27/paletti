@@ -110,15 +110,32 @@ def test_wallpaper(tmp):
     assert paletti.pick_wallpaper([], "default", None) is None
 
 
+def test_interrupted_swap(icons):
+    """A job stopped during set_icon_theme leaves Adwaita set; the next one restores it."""
+    (icons / "Tela-purple-dark").mkdir()
+    (icons / "Tela-green-dark").mkdir()
+    paletti.ICON_THEME_SWAP = icons / "icon-theme"
+    paletti.ICON_THEME_SWAP.write_text("Tela-purple-dark")  # what the stopped job left behind
+    state = fake_gsettings("Adwaita")
+    assert paletti.recolor_icons(["green"], "#a7c080") is None
+    assert state["icon-theme"] == "Tela-green-dark"
+    assert not paletti.ICON_THEME_SWAP.exists()  # cleaned up after a finished swap
+
+    state = fake_gsettings("Adwaita")  # chosen by the user: no swap file, left alone
+    assert paletti.recolor_icons(["green"], "#a7c080") is None
+    assert state["icon-theme"] == "Adwaita"
+
+
 def test_adwaita():
     fake_gsettings("Adwaita")
     assert paletti.recolor_icons(["green"], "#a7c080") is None
 
 
 if __name__ == "__main__":
-    for test in [test_variants, test_papirus, test_tela, test_wallpaper]:
+    for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
+            paletti.ICON_THEME_SWAP = Path(tmp) / "icon-theme"
             test(Path(tmp))
     test_adwaita()
     print("ok")
