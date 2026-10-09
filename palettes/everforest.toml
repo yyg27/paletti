@@ -1,0 +1,21 @@
+name = "Everforest"
+gnome_accent = "green"
+
+[colors]
+bg            = "#2d353b"
+bg_alt        = "#232a2e"
+fg            = "#d3c6aa"
+surface       = "#475258"
+surface_hover = "#56635f"
+card          = "#343f44"
+card_alt      = "#30393e"
+card_hover    = "#3d484d"
+accent        = "#a7c080"
+accent_hover  = "#b8cd96"
+accent2       = "#83c092"
+heading       = "#7fbbb3"
+muted         = "#859289"
+
+[terminal]
+palette = ["#343F44", "#E67E80", "#A7C080", "#DBBC7F", "#7FBBB3", "#D699B6", "#83C092", "#D3C6AA",
+           "#868D80", "#E67E80", "#A7C080", "#DBBC7F", "#7FBBB3", "#D699B6", "#83C092", "#D3C6AA"]

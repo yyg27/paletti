@@ -1,0 +1,112 @@
+/* GNOME's own dark theme + island-style top bar, $name colors. */
+@import url("resource:///org/gnome/shell/theme/gnome-shell-dark.css");
+
+#panel { background-color: transparent; }
+
+#panelLeft, #panelCenter, #panelRight {
+  background-color: rgba($bg_rgb, 0.92);
+  border: 1px solid rgba($accent_rgb, 0.35);
+  border-radius: 99px;
+  margin: 4px 6px;
+  padding: 0 6px; }
+
+#panel .panel-button { color: $fg; }
+
+.quick-settings,
+.datemenu-popover,
+.quick-toggle-menu {
+  background-color: $bg;
+  border: none;
+  color: $fg; }
+
+
+.quick-toggle,
+.quick-settings-system-item .icon-button,
+.quick-slider .icon-button {
+  background-color: $surface;
+  color: $fg; }
+.quick-toggle:hover,
+.quick-settings-system-item .icon-button:hover,
+.quick-slider .icon-button:hover { background-color: $surface_hover; }
+
+
+.quick-toggle:checked,
+.quick-toggle-has-menu:checked .quick-toggle-menu-button {
+  background-color: $accent;
+  color: $bg; }
+.quick-toggle:checked:hover,
+.quick-toggle-has-menu:checked .quick-toggle-menu-button:hover { background-color: $accent_hover; }
+
+
+.slider {
+  -barlevel-active-background-color: $accent2;
+  -barlevel-background-color: $surface; }
+
+
+.calendar .calendar-day.calendar-today { background-color: $accent; color: $bg; }
+.message, .events-button, .world-clocks-button, .weather-button { background-color: $card; }
+
+
+.calendar .calendar-day,
+.calendar .calendar-day-heading,
+.calendar .calendar-month-header .calendar-month-label,
+.calendar .calendar-month-header .pager-button { background-color: transparent; }
+.calendar .calendar-day { color: $fg; }
+.calendar .calendar-day:hover,
+.calendar .calendar-month-header .pager-button:hover { background-color: $surface; }
+.calendar .calendar-day:selected { background-color: $muted; color: $fg; }
+.calendar .calendar-day.calendar-weekend { color: $accent2; }
+.calendar .calendar-day.calendar-other-month { color: rgba($fg_rgb, 0.3); }
+.calendar .calendar-day.calendar-today:hover { background-color: $accent_hover; }
+.calendar .calendar-day-heading { color: $heading; }
+.calendar .calendar-month-header .calendar-month-label { color: $accent !important; }
+.datemenu-today-button .date-label { color: $fg; }
+.datemenu-today-button .day-label { color: $accent; }
+
+.message-list { border-color: rgba($accent_rgb, 0.2); }
+
+.popup-menu-content,
+.candidate-popup-content {
+  background-color: $bg;
+  border: none;
+  color: $fg; }
+.popup-menu-item:hover,
+.popup-menu-item:selected,
+.popup-menu-item:checked { background-color: $surface; color: $fg; }
+.popup-menu-item:active { background-color: $surface_hover; }
+.popup-sub-menu { background-color: $card; }
+.popup-separator-menu-item .popup-separator-menu-item-separator { background-color: rgba($muted_rgb, 0.4); }
+
+.icon-button.flat,
+.button.flat { background-color: transparent; }
+.icon-button.flat:hover,
+.button.flat:hover { background-color: $surface; }
+
+.toggle-switch { background: $surface; }
+.toggle-switch:checked { background: $accent; }
+
+.modal-dialog {
+  background-color: $bg;
+  border: none;
+  color: $fg; }
+.modal-dialog .modal-dialog-button-box .modal-dialog-button { background-color: $surface; }
+.modal-dialog .modal-dialog-button-box .modal-dialog-button:hover { background-color: $surface_hover; }
+.audio-device-selection-dialog .audio-selection-box .audio-selection-device { background-color: $surface; }
+
+.osd-window,
+.switcher-list { background-color: $bg; color: $fg; }
+.switcher-list .item-box:selected { background-color: $surface; }
+
+.notification-banner,
+.message { background-color: $card; color: $fg; }
+.message:second-in-stack { background-color: $card_alt; }
+.message:hover { background-color: $card_hover; }
+
+.osd-window .level {
+  -barlevel-active-background-color: $accent2;
+  -barlevel-background-color: $surface; }
+
+#dash .dash-background { border-radius: 24px; border: none; }
+#dash .dash-item-container .show-apps:hover .overview-icon,
+#dash .dash-item-container .overview-tile:hover .overview-icon { background-color: $surface; }
+#dash .dash-separator { background-color: rgba($muted_rgb, 0.4); }

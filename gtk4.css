@@ -1,0 +1,29 @@
+/* paletti-generated ($name). Do not edit by hand, overwritten on the next theme switch. */
+:root {
+  --accent-bg-color: $accent;
+  --accent-fg-color: $bg;
+  --accent-color: $accent;
+
+  --window-bg-color: $bg;
+  --window-fg-color: $fg;
+  --view-bg-color: $bg;
+  --view-fg-color: $fg;
+
+  --headerbar-bg-color: $bg_alt;
+  --headerbar-backdrop-color: $bg_alt;
+  --headerbar-fg-color: $fg;
+
+  --sidebar-bg-color: $bg_alt;
+  --sidebar-backdrop-color: $bg_alt;
+  --sidebar-fg-color: $fg;
+  --secondary-sidebar-bg-color: $bg_alt;
+  --secondary-sidebar-backdrop-color: $bg_alt;
+  --secondary-sidebar-fg-color: $fg;
+
+  --popover-bg-color: $bg;
+  --popover-fg-color: $fg;
+  --dialog-bg-color: $bg;
+  --dialog-fg-color: $fg;
+  --card-bg-color: $card;
+  --card-fg-color: $fg;
+}

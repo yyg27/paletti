@@ -1,0 +1,21 @@
+name = "Dracula"
+gnome_accent = "purple"   # GNOME accent color: blue teal green yellow orange red pink purple slate
+
+[colors]
+bg            = "#282a36"  # menu/island background, text on accent
+bg_alt        = "#21222c"  # header bar, sidebar
+fg            = "#f8f8f2"  # text
+surface       = "#44475a"  # inactive buttons, hover, slider trough
+surface_hover = "#565a72"
+card          = "#343746"  # notification cards, submenus
+card_alt      = "#2e303e"  # stacked notification card behind
+card_hover    = "#3d4052"
+accent        = "#bd93f9"  # active buttons, today, switches, dock dots
+accent_hover  = "#cba6fb"
+accent2       = "#ff79c6"  # volume/brightness sliders, weekends
+heading       = "#8be9fd"  # calendar day headings
+muted         = "#6272a4"  # selected day, separators
+
+[terminal]
+palette = ["#21222C", "#FF5555", "#50FA7B", "#F1FA8C", "#BD93F9", "#FF79C6", "#8BE9FD", "#F8F8F2",
+           "#6272A4", "#FF6E6E", "#69FF94", "#FFFFA5", "#D6ACFF", "#FF92DF", "#A4FFFF", "#FFFFFF"]
