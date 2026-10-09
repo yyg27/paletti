@@ -19,6 +19,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -32,6 +33,7 @@ HOME = Path.home()
 EXTENSIONS = HOME / ".local/share/gnome-shell/extensions"
 THEME_CSS = HOME / ".local/share/themes/Islands/gnome-shell/gnome-shell.css"
 STATE = HOME / ".local/state/paletti/current"
+ICONS_PID = HOME / ".local/state/paletti/icons.pid"
 CONFIG = HOME / ".config/paletti/config.toml"
 CHOSEN_WALLPAPER = HOME / ".local/state/paletti/wallpaper"  # one file per palette
 WALLPAPER_MODES = ("default", "chosen", "keep")
@@ -127,7 +129,10 @@ def recolor_tela(accent, tint=0.0):
         if not src.is_dir():
             return "Tela-circle not found, install tela-circle-icon-theme-standard."
         if not dst.exists():
-            shutil.copytree(src, dst, symlinks=True)
+            tmp = dst.with_name(dst.name + ".partial")
+            shutil.rmtree(tmp, ignore_errors=True)
+            shutil.copytree(src, tmp, symlinks=True)
+            tmp.rename(dst)
             index = dst / "index.theme"
             index.write_text(index.read_text().replace("Name=Tela circle", "Name=Tela circle paletti", 1))
             # -dark links into the base theme at any depth (../../Tela-circle/16/apps).
@@ -262,10 +267,6 @@ def apply(name):
             target.rename(backup)
         target.write_text(render(palette, template))
 
-    message = recolor_icons(palette["icon_color"], c["accent"], palette.get("icon_tint", 0.0))
-    if message:
-        print(message, file=sys.stderr)
-
     apply_wallpaper(name, palette)
 
     # GNOME Terminal default profile.
@@ -291,6 +292,30 @@ def apply(name):
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(name)
     sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"], palette.get("description", ""))
+    start_icons(name)
+
+
+def start_icons(name):
+    """Icons take ~1s, so they run in a detached process after everything else
+    has changed. A newer switch stops the older job: the latest palette wins,
+    and since every job rewrites all icons, a cut-off job leaves nothing behind."""
+    try:
+        pid = int(ICONS_PID.read_text())
+        # Only stop it if that pid is still our job; pids get reused by other programs.
+        if b"--icons" in Path(f"/proc/{pid}/cmdline").read_bytes():
+            os.kill(pid, signal.SIGTERM)
+    except (FileNotFoundError, ValueError, ProcessLookupError, PermissionError):
+        pass
+    job = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--icons", name],
+                           start_new_session=True, stdout=subprocess.DEVNULL)
+    ICONS_PID.write_text(str(job.pid))
+
+
+def apply_icons(name):
+    palette = load(name)
+    message = recolor_icons(palette["icon_color"], palette["colors"]["accent"], palette.get("icon_tint", 0.0))
+    if message:
+        print(message, file=sys.stderr)
 
 
 def load_config():
@@ -420,6 +445,8 @@ def main(args):
         print("\n".join(names()))
     elif args == ["--install"]:
         install()
+    elif len(args) == 2 and args[0] == "--icons" and args[1] in names():  # internal, see start_icons
+        apply_icons(args[1])
     elif args == ["--next-wallpaper"]:
         next_wallpaper()
     elif len(args) == 2 and args[0] == "--wallpaper" and args[1] in WALLPAPER_MODES:
