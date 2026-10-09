@@ -1,5 +1,6 @@
 name = "Everforest"
 gnome_accent = "green"
+icon_color = ["green"]
 
 [colors]
 bg            = "#2d353b"
