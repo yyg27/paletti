@@ -290,7 +290,7 @@ def apply(name):
 
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(name)
-    sh("notify-send", "-a", "Paletti", "-t", "2000", f"Theme: {palette['name']}")
+    sh("notify-send", "--transient", "-a", "Paletti", "-t", "2000", f"Theme: {palette['name']}")
 
 
 def load_config():
@@ -372,7 +372,7 @@ def next_wallpaper():
     config["wallpaper"] = "chosen"
     save_config(config)
     set_wallpaper(wallpaper)
-    sh("notify-send", "-a", "Paletti", "-t", "2000", f"Wallpaper: {wallpaper.stem}")
+    sh("notify-send", "--transient", "-a", "Paletti", "-t", "2000", f"Wallpaper: {wallpaper.stem}")
 
 
 def set_wallpaper_mode(mode):
