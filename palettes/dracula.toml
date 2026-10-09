@@ -1,6 +1,7 @@
 name = "Dracula"
 gnome_accent = "purple"   # GNOME accent color: blue teal green yellow orange red pink purple slate
 icon_color = ["violet", "purple"]   # first one the icon theme has wins (Papirus: violet, Tela: purple)
+icon_tint = 0.2   # app icons move 20% toward the accent (Tela only, 0 = original colors)
 
 [colors]
 bg            = "#282a36"  # menu/island background, text on accent

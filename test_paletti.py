@@ -79,8 +79,14 @@ def test_tela(icons):
         # System apps take the accent, third-party apps keep their own colors.
         editor = (out / "scalable/apps/org.gnome.TextEditor.svg").resolve().read_bytes().lower()
         assert accent.encode() in editor and b"#32a3d7" not in editor
-        blender = (out / "scalable/apps/blender.svg").resolve().read_bytes()
-        assert blender == (src / "Tela-circle/scalable/apps/blender.svg").resolve().read_bytes()
+        blender_out = (out / "scalable/apps/blender.svg").resolve()
+        blender_src = (src / "Tela-circle/scalable/apps/blender.svg").resolve().read_bytes()
+        assert blender_out.read_bytes() == blender_src  # tint 0: untouched
+        assert paletti.recolor_icons([], accent, 0.2) is None
+        assert blender_out.read_bytes() != blender_src  # tinted
+        assert accent.encode() in (out / "scalable/apps/org.gnome.TextEditor.svg").resolve().read_bytes()
+        assert paletti.recolor_icons([], accent, 0.0) is None
+        assert blender_out.read_bytes() == blender_src  # tint back to 0 restores it
         # Only links already broken in the Tela package itself may be broken.
         broken = {p.relative_to(icons / p.relative_to(icons).parts[0]) for p in icons.rglob("*")
                   if p.is_symlink() and not p.exists()}
