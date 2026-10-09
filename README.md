@@ -67,6 +67,7 @@ A palette is a TOML file in `palettes/`. Adding a theme means adding one file.
 
 ```toml
 name = "Everforest"
+description = "A green based color scheme, designed to be warm and soft."   # notification text
 gnome_accent = "green"   # blue teal green yellow orange red pink purple slate
 icon_color = ["green"]   # folder color for Papirus / color-variant icon themes
 icon_tint = 0.2          # app icons move 20% toward the accent (Tela only)
