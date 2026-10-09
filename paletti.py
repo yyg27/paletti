@@ -291,7 +291,6 @@ def apply(name):
 
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(name)
-    sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"], palette.get("description", ""))
     start_icons(name)
 
 
@@ -316,6 +315,8 @@ def apply_icons(name):
     message = recolor_icons(palette["icon_color"], palette["colors"]["accent"], palette.get("icon_tint", 0.0))
     if message:
         print(message, file=sys.stderr)
+    # Last, so it shows up once everything, icons included, has switched.
+    sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"], palette.get("description", ""))
 
 
 def load_config():
