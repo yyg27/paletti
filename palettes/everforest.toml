@@ -1,4 +1,5 @@
 name = "Everforest"
+description = "A green based color scheme, designed to be warm and soft."
 gnome_accent = "green"
 icon_color = ["green"]
 icon_tint = 0.2

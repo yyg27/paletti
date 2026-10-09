@@ -290,7 +290,7 @@ def apply(name):
 
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(name)
-    sh("notify-send", "--transient", "-a", "Paletti", "-t", "2000", f"Theme: {palette['name']}")
+    sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"], palette.get("description", ""))
 
 
 def load_config():
