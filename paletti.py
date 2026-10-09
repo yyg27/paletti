@@ -66,6 +66,11 @@ def saturated(hex_color):
     lightness, saturation = colorsys.rgb_to_hls(*(int(hex_color[i:i + 2], 16) / 255 for i in (0, 2, 4)))[1:]
     return saturation > 0.25 and 0.12 < lightness < 0.92
 
+# Screen crossfade from extension/ (GNOME's dark style transition): hold the old
+# screen this long, then fade it out. Icons land ~1s in, near the end of the fade.
+EXTENSION_UUID = "paletti@yyg27"
+TRANSITION_MS = (350, 800)
+
 KEYBINDING_SCHEMA = "org.gnome.settings-daemon.plugins.media-keys"
 KEYBINDING_PATH = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/paletti/"
 
@@ -240,6 +245,10 @@ def recolor_icons(colors, accent, tint=0.0):
 def apply(name):
     palette = load(name)
     c = palette["colors"]
+
+    # Freeze the current screen first; without the extension this just fails quietly.
+    sh("gdbus", "call", "--session", "--dest", "org.gnome.Shell", "--object-path", "/io/paletti/Transition",
+       "--method", "io.paletti.Transition.Freeze", *map(str, TRANSITION_MS))
 
     # Shell: write the CSS, then reload by clearing and resetting user-theme.
     THEME_CSS.parent.mkdir(parents=True, exist_ok=True)
@@ -425,6 +434,15 @@ def install():
     if not link.exists():
         link.symlink_to(Path(__file__).resolve())
 
+    # The transition extension. A newly installed extension loads after logging
+    # out and back in, so it is enabled through gsettings.
+    extension = EXTENSIONS / EXTENSION_UUID
+    if not extension.exists():
+        extension.symlink_to(HERE / "extension")
+    enabled = ast.literal_eval(sh("gsettings", "get", "org.gnome.shell", "enabled-extensions").removeprefix("@as "))
+    if EXTENSION_UUID not in enabled:
+        sh("gsettings", "set", "org.gnome.shell", "enabled-extensions", str(enabled + [EXTENSION_UUID]))
+
     # Existing custom shortcuts are kept, only paletti's are added.
     shortcuts = [(KEYBINDING_PATH, "Paletti", str(link), "<Super>y"),
                  (KEYBINDING_PATH.replace("/paletti/", "/paletti-wallpaper/"), "Paletti wallpaper",
@@ -439,6 +457,7 @@ def install():
         sh("gsettings", "set", item, "command", command)
         sh("gsettings", "set", item, "binding", binding)
     print(f"Installed: {link}, shortcuts Super+Y (theme) and Super+Shift+Y (wallpaper)")
+    print(f"Extension {EXTENSION_UUID} enabled; log out and back in once for the screen transition.")
 
 
 def main(args):
