@@ -362,7 +362,8 @@ def next_wallpaper():
     """Cycles the current palette's wallpapers and remembers the pick."""
     name = current_name()
     config = load_config()
-    options = wallpaper_options(name, load(name), config)
+    palette = load(name)
+    options = wallpaper_options(name, palette, config)
     if not options:
         sys.exit(f"{name} has no wallpapers; add some under [wallpapers] in {CONFIG}.")
     current = pick_wallpaper(options, "chosen", chosen_wallpaper(name))
@@ -372,7 +373,8 @@ def next_wallpaper():
     config["wallpaper"] = "chosen"
     save_config(config)
     set_wallpaper(wallpaper)
-    sh("notify-send", "--transient", "-a", "Paletti", "-t", "2000", f"Wallpaper: {wallpaper.stem}")
+    title = wallpaper.stem.replace("_", " ").replace("-", " ").title()
+    sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", "Wallpaper changed", title)
 
 
 def set_wallpaper_mode(mode):
