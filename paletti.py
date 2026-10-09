@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import tomllib
 from pathlib import Path
 from string import Template
@@ -93,8 +94,10 @@ def find_icon_theme(name):
 
 
 def set_icon_theme(name):
-    # Switching away and back makes running apps reload their icons.
+    # Switching away and back makes running apps reload their icons. Without the
+    # pause GNOME merges both changes into "unchanged" and keeps the old icons.
     sh("gsettings", "set", "org.gnome.desktop.interface", "icon-theme", "Adwaita")
+    time.sleep(0.5)
     sh("gsettings", "set", "org.gnome.desktop.interface", "icon-theme", name)
 
 
