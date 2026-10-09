@@ -93,13 +93,30 @@ def test_tela(icons):
         assert broken <= broken_in_package, broken - broken_in_package
 
 
+def test_wallpaper(tmp):
+    own, default = tmp / "own.jpg", paletti.HERE / "wallpapers/dracula/arch.png"
+    own.touch()
+    paletti.CONFIG = tmp / "config.toml"
+    config = {"wallpaper": "chosen", "wallpapers": {"dracula": [str(own), str(tmp / "missing.jpg")]}}
+    paletti.save_config(config)
+    assert paletti.load_config() == config  # round trip
+
+    options = paletti.wallpaper_options("dracula", {"wallpaper": "wallpapers/dracula/arch.png"}, config)
+    assert options == [default, own]  # relative to the project, missing file skipped
+    assert paletti.pick_wallpaper(options, "default", own) == default
+    assert paletti.pick_wallpaper(options, "chosen", own) == own
+    assert paletti.pick_wallpaper(options, "chosen", None) == default  # nothing picked yet
+    assert paletti.pick_wallpaper(options, "keep", own) is None
+    assert paletti.pick_wallpaper([], "default", None) is None
+
+
 def test_adwaita():
     fake_gsettings("Adwaita")
     assert paletti.recolor_icons(["green"], "#a7c080") is None
 
 
 if __name__ == "__main__":
-    for test in [test_variants, test_papirus, test_tela]:
+    for test in [test_variants, test_papirus, test_tela, test_wallpaper]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
             test(Path(tmp))

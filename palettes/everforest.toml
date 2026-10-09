@@ -2,6 +2,7 @@ name = "Everforest"
 gnome_accent = "green"
 icon_color = ["green"]
 icon_tint = 0.2
+wallpaper = "wallpapers/everforest/forest_stairs.jpg"
 
 [colors]
 bg            = "#2d353b"

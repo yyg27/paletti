@@ -26,6 +26,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | GNOME Terminal | Default profile colors and 16-color palette |
 | Dash to Dock | Background color and running-app dots (opacity is left alone) |
 | Icons | See [Icons](#icons) |
+| Wallpaper and lock screen | See [Wallpapers](#wallpapers) |
 
 ## Requirements
 
@@ -41,8 +42,10 @@ git clone <repo> ~/Projects/paletti
 ~/Projects/paletti/paletti.py --install
 ```
 
-`--install` links `~/.local/bin/paletti` to the script and adds a
-<kbd>Super</kbd>+<kbd>Y</kbd> custom shortcut. Existing shortcuts are kept.
+`--install` links `~/.local/bin/paletti` to the script and adds two custom
+shortcuts: <kbd>Super</kbd>+<kbd>Y</kbd> (next palette) and
+<kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> (next wallpaper). Existing
+shortcuts are kept.
 
 ## Usage
 
@@ -50,6 +53,9 @@ git clone <repo> ~/Projects/paletti
 paletti              # switch to the next palette
 paletti everforest   # switch to a specific palette
 paletti --list       # list palettes
+
+paletti --next-wallpaper                  # next wallpaper of the current palette
+paletti --wallpaper default|chosen|keep   # see Wallpapers
 ```
 
 A notification shows the new theme. Shell, dock and terminal change instantly;
@@ -64,6 +70,7 @@ name = "Everforest"
 gnome_accent = "green"   # blue teal green yellow orange red pink purple slate
 icon_color = ["green"]   # folder color for Papirus / color-variant icon themes
 icon_tint = 0.2          # app icons move 20% toward the accent (Tela only)
+wallpaper = "wallpapers/everforest/forest_stairs.jpg"   # optional, relative to the project
 
 [colors]
 bg            = "#2d353b"
@@ -113,6 +120,31 @@ paletti looks at the active icon theme and does what fits it:
 Everything is regenerated from the original icons on each switch, so colors never
 drift. Themes that name colors differently (for example `Qogir-manjaro` for green)
 are left unchanged with a message.
+
+## Wallpapers
+
+Each palette can name a default wallpaper; it is also used for the lock screen.
+The bundled ones live in `wallpapers/`.
+
+Your own wallpapers and the mode go in `~/.config/paletti/config.toml`:
+
+```toml
+wallpaper = "default"   # default | chosen | keep
+
+[wallpapers]
+dracula = ["~/Pictures/my-dracula.png"]
+everforest = ["~/.config/background", "~/Pictures/forest.jpg"]
+```
+
+| Mode | Wallpaper on a palette switch |
+| --- | --- |
+| `default` | The palette's own wallpaper |
+| `chosen` | The last one picked with <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd>, remembered per palette |
+| `keep` | Left alone |
+
+<kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> cycles the palette's default and
+your own wallpapers and switches the mode to `chosen`. `paletti --wallpaper`
+rewrites the config file, so comments added by hand are not kept.
 
 ## Backups
 

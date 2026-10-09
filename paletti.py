@@ -4,11 +4,18 @@
     paletti              switch to the next theme
     paletti everforest   switch to a specific theme
     paletti --list       list themes
-    paletti --install    ~/.local/bin/paletti symlink + Super+Y shortcut
+    paletti --install    ~/.local/bin/paletti symlink + Super+Y / Super+Shift+Y shortcuts
+
+    paletti --next-wallpaper            next wallpaper of the current palette
+    paletti --wallpaper default|chosen|keep
+        default: the palette's wallpaper, chosen: the last one picked with
+        --next-wallpaper, keep: never touch the wallpaper.
+        Own wallpapers go under [wallpapers] in ~/.config/paletti/config.toml.
 """
 
 import ast
 import colorsys
+import json
 import os
 import re
 import shutil
@@ -25,6 +32,9 @@ HOME = Path.home()
 EXTENSIONS = HOME / ".local/share/gnome-shell/extensions"
 THEME_CSS = HOME / ".local/share/themes/Islands/gnome-shell/gnome-shell.css"
 STATE = HOME / ".local/state/paletti/current"
+CONFIG = HOME / ".config/paletti/config.toml"
+CHOSEN_WALLPAPER = HOME / ".local/state/paletti/wallpaper"  # one file per palette
+WALLPAPER_MODES = ("default", "chosen", "keep")
 
 GTK_CSS = {"gtk4.css": HOME / ".config/gtk-4.0/gtk.css",
            "gtk3.css": HOME / ".config/gtk-3.0/gtk.css"}
@@ -256,6 +266,8 @@ def apply(name):
     if message:
         print(message, file=sys.stderr)
 
+    apply_wallpaper(name, palette)
+
     # GNOME Terminal default profile.
     profile = sh("gsettings", "get", "org.gnome.Terminal.ProfilesList", "default").strip("'")
     if profile:
@@ -281,6 +293,97 @@ def apply(name):
     sh("notify-send", "-a", "Paletti", "-t", "2000", f"Theme: {palette['name']}")
 
 
+def load_config():
+    return tomllib.loads(CONFIG.read_text()) if CONFIG.exists() else {}
+
+
+def save_config(config):
+    # manbun: rewrites the file, so hand-written comments in it are lost.
+    lines = [f'wallpaper = "{config.get("wallpaper", "default")}"   # default | chosen | keep', "",
+             "[wallpapers]   # your own wallpapers per palette, cycled with Super+Shift+Y"]
+    lines += [f"{name} = {json.dumps(paths)}" for name, paths in config.get("wallpapers", {}).items()]
+    CONFIG.parent.mkdir(parents=True, exist_ok=True)
+    CONFIG.write_text("\n".join(lines) + "\n")
+
+
+def wallpaper_options(name, palette, config):
+    """The palette's default wallpaper first, then the user's own. Relative paths
+    are inside the project, so the bundled wallpapers work from any checkout."""
+    paths = ([palette["wallpaper"]] if "wallpaper" in palette else []) + config.get("wallpapers", {}).get(name, [])
+    options = []
+    for p in paths:
+        path = Path(p).expanduser()
+        path = path if path.is_absolute() else HERE / path
+        if path.is_file():
+            options.append(path)
+        else:
+            print(f"Wallpaper {path} not found, skipped.", file=sys.stderr)
+    return options
+
+
+def pick_wallpaper(options, mode, chosen):
+    """None means: leave the wallpaper alone."""
+    if mode == "keep" or not options:
+        return None
+    if mode == "chosen" and chosen in options:
+        return chosen
+    return options[0]
+
+
+def set_wallpaper(path):
+    """Desktop (light and dark style) and lock screen."""
+    for schema, key in [("org.gnome.desktop.background", "picture-uri"),
+                        ("org.gnome.desktop.background", "picture-uri-dark"),
+                        ("org.gnome.desktop.screensaver", "picture-uri")]:
+        sh("gsettings", "set", schema, key, path.as_uri())
+
+
+def chosen_wallpaper(name):
+    path = CHOSEN_WALLPAPER / name
+    return Path(path.read_text().strip()) if path.exists() else None
+
+
+def apply_wallpaper(name, palette):
+    config = load_config()
+    options = wallpaper_options(name, palette, config)
+    wallpaper = pick_wallpaper(options, config.get("wallpaper", "default"), chosen_wallpaper(name))
+    if wallpaper:
+        set_wallpaper(wallpaper)
+
+
+def current_name():
+    name = STATE.read_text().strip() if STATE.exists() else None
+    if name not in names():
+        sys.exit("No palette applied yet, run paletti first.")
+    return name
+
+
+def next_wallpaper():
+    """Cycles the current palette's wallpapers and remembers the pick."""
+    name = current_name()
+    config = load_config()
+    options = wallpaper_options(name, load(name), config)
+    if not options:
+        sys.exit(f"{name} has no wallpapers; add some under [wallpapers] in {CONFIG}.")
+    current = pick_wallpaper(options, "chosen", chosen_wallpaper(name))
+    wallpaper = options[(options.index(current) + 1) % len(options)]
+    CHOSEN_WALLPAPER.mkdir(parents=True, exist_ok=True)
+    (CHOSEN_WALLPAPER / name).write_text(str(wallpaper))
+    config["wallpaper"] = "chosen"
+    save_config(config)
+    set_wallpaper(wallpaper)
+    sh("notify-send", "-a", "Paletti", "-t", "2000", f"Wallpaper: {wallpaper.stem}")
+
+
+def set_wallpaper_mode(mode):
+    config = load_config()
+    config["wallpaper"] = mode
+    save_config(config)
+    name = current_name()
+    apply_wallpaper(name, load(name))
+    print(f"Wallpaper mode: {mode}")
+
+
 def next_name():
     all_names = names()
     current = STATE.read_text().strip() if STATE.exists() else None
@@ -294,15 +397,20 @@ def install():
     if not link.exists():
         link.symlink_to(Path(__file__).resolve())
 
-    # Existing custom shortcuts are kept, only paletti's is added.
+    # Existing custom shortcuts are kept, only paletti's are added.
+    shortcuts = [(KEYBINDING_PATH, "Paletti", str(link), "<Super>y"),
+                 (KEYBINDING_PATH.replace("/paletti/", "/paletti-wallpaper/"), "Paletti wallpaper",
+                  f"{link} --next-wallpaper", "<Super><Shift>y")]
     paths = ast.literal_eval(sh("gsettings", "get", KEYBINDING_SCHEMA, "custom-keybindings").removeprefix("@as "))
-    if KEYBINDING_PATH not in paths:
-        sh("gsettings", "set", KEYBINDING_SCHEMA, "custom-keybindings", str(paths + [KEYBINDING_PATH]))
-    item = f"{KEYBINDING_SCHEMA}.custom-keybinding:{KEYBINDING_PATH}"
-    sh("gsettings", "set", item, "name", "Paletti")
-    sh("gsettings", "set", item, "command", str(link))
-    sh("gsettings", "set", item, "binding", "<Super>y")
-    print(f"Installed: {link}, shortcut Super+Y")
+    new_paths = [path for path, *_ in shortcuts if path not in paths]
+    if new_paths:
+        sh("gsettings", "set", KEYBINDING_SCHEMA, "custom-keybindings", str(paths + new_paths))
+    for path, name, command, binding in shortcuts:
+        item = f"{KEYBINDING_SCHEMA}.custom-keybinding:{path}"
+        sh("gsettings", "set", item, "name", name)
+        sh("gsettings", "set", item, "command", command)
+        sh("gsettings", "set", item, "binding", binding)
+    print(f"Installed: {link}, shortcuts Super+Y (theme) and Super+Shift+Y (wallpaper)")
 
 
 def main(args):
@@ -310,6 +418,10 @@ def main(args):
         print("\n".join(names()))
     elif args == ["--install"]:
         install()
+    elif args == ["--next-wallpaper"]:
+        next_wallpaper()
+    elif len(args) == 2 and args[0] == "--wallpaper" and args[1] in WALLPAPER_MODES:
+        set_wallpaper_mode(args[1])
     elif not args:
         apply(next_name())
     elif len(args) == 1 and args[0] in names():
