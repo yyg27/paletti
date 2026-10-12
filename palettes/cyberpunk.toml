@@ -1,0 +1,24 @@
+name = "Cyberpunk"
+description = "Neon yellow, cyan and violet on a midnight purple city."
+gnome_accent = "yellow"
+icon_color = ["yellow"]
+icon_tint = 0.2
+
+[colors]
+bg            = "#0d0221"
+bg_alt        = "#08011a"
+fg            = "#e6f9ff"
+surface       = "#2b1454"
+surface_hover = "#3a1d6e"
+card          = "#1b093a"
+card_alt      = "#14062e"
+card_hover    = "#2b1454"
+accent        = "#fcee09"
+accent_hover  = "#fdf35a"
+accent2       = "#ff003c"
+heading       = "#b026ff"
+muted         = "#008f99"
+
+[terminal]
+palette = ["#0D0221", "#FF003C", "#00FF9F", "#FCEE09", "#00B8FF", "#B026FF", "#00F0FF", "#D0F8FF",
+           "#2B1454", "#FF4D76", "#5CFFBE", "#FDF35A", "#5CD3FF", "#C86BFF", "#7AF7FF", "#FFFFFF"]

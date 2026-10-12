@@ -1,0 +1,24 @@
+name = "Evangelion"
+description = "Unit-01 purple and green, straight from the entry plug."
+gnome_accent = "green"
+icon_color = ["green"]
+icon_tint = 0.2
+
+[colors]
+bg            = "#12091e"
+bg_alt        = "#0c0614"
+fg            = "#f0eaf7"
+surface       = "#2b1845"
+surface_hover = "#3a2160"
+card          = "#1e1031"
+card_alt      = "#180c28"
+card_hover    = "#2b1845"
+accent        = "#88ff5f"
+accent_hover  = "#a3ff86"
+accent2       = "#a670f5"
+heading       = "#88ff5f"
+muted         = "#8338ec"
+
+[terminal]
+palette = ["#12091E", "#FF4F5E", "#88FF5F", "#FFB340", "#6C63FF", "#8338EC", "#5FD7FF", "#F0EAF7",
+           "#3A2160", "#FF7A85", "#A3FF86", "#FFCB75", "#8F88FF", "#A670F5", "#8AE4FF", "#FFFFFF"]
