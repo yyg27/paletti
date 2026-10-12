@@ -1,0 +1,25 @@
+name = "Kanagawa"
+description = "A dark theme inspired by the colors of Hokusai's Great Wave off Kanagawa."
+gnome_accent = "blue"
+icon_color = ["blue"]
+icon_tint = 0.2
+wallpaper = "wallpapers/kanagawa/great-wave.jpg"
+
+[colors]
+bg            = "#1f1f28"
+bg_alt        = "#16161d"
+fg            = "#dcd7ba"
+surface       = "#363646"
+surface_hover = "#54546d"
+card          = "#2a2a37"
+card_alt      = "#25252f"
+card_hover    = "#363646"
+accent        = "#7e9cd8"
+accent_hover  = "#98b0e0"
+accent2       = "#d27e99"
+heading       = "#7fb4ca"
+muted         = "#2d4f67"
+
+[terminal]
+palette = ["#16161D", "#C34043", "#76946A", "#C0A36E", "#7E9CD8", "#957FB8", "#6A9589", "#C8C093",
+           "#727169", "#E82424", "#98BB6C", "#E6C384", "#7FB4CA", "#938AA9", "#7AA89F", "#DCD7BA"]
