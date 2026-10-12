@@ -3,7 +3,7 @@ description = "An arctic, north-bluish color palette."
 gnome_accent = "blue"
 icon_color = ["nordic", "blue"]
 icon_tint = 0.2
-wallpaper = "wallpapers/nord/pyrenees-blue-hour.jpg"
+wallpaper = "wallpapers/nord/nord-wallpaper.png"
 
 [colors]
 bg            = "#2e3440"
