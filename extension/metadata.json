@@ -1,7 +1,7 @@
 {
   "uuid": "paletti@yyg27",
   "name": "Paletti",
-  "description": "Smooth screen transition for paletti theme switches.",
+  "description": "Quick Settings tile and smooth screen transition for paletti theme switches.",
   "shell-version": [
     "51"
   ]

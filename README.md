@@ -63,6 +63,9 @@ paletti --next-wallpaper                  # next wallpaper of the current palett
 paletti --wallpaper default|chosen|keep   # see Wallpapers
 ```
 
+The **Paletti** tile in Quick Settings does the same: click it for the next
+palette, or open its menu to pick one or change the wallpaper.
+
 A notification shows the new theme. Shell, dock and terminal change instantly;
 already open apps pick up new GTK colors when reopened.
 
