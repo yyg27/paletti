@@ -16,6 +16,7 @@ card_hover    = "#2b1454"
 accent        = "#fcee09"
 accent_hover  = "#fdf35a"
 accent2       = "#ff003c"
+icons         = "#ff003c"
 heading       = "#b026ff"
 muted         = "#008f99"
 

@@ -329,7 +329,9 @@ def start_icons(name):
 
 def apply_icons(name):
     palette = load(name)
-    message = recolor_icons(palette["icon_color"], palette["colors"]["accent"], palette.get("icon_tint", 0.0))
+    # Icons follow the accent unless the palette gives them their own color.
+    c = palette["colors"]
+    message = recolor_icons(palette["icon_color"], c.get("icons", c["accent"]), palette.get("icon_tint", 0.0))
     if message:
         print(message, file=sys.stderr)
     # Last, so it shows up once everything, icons included, has switched.
