@@ -10,10 +10,13 @@ dock, GTK apps, GNOME Terminal, the accent color and the icons. Press
 
 | Theme | Background | Text | Accent | Accent 2 | GNOME accent |
 | --- | --- | --- | --- | --- | --- |
+| [Catppuccin](https://catppuccin.com) (mocha) | `#1e1e2e` | `#cdd6f4` | `#cba6f7` | `#f5c2e7` | purple |
 | [Dracula](https://draculatheme.com) | `#282a36` | `#f8f8f2` | `#bd93f9` | `#ff79c6` | purple |
 | [Everforest](https://github.com/sainnhe/everforest) (dark, medium) | `#2d353b` | `#d3c6aa` | `#a7c080` | `#83c092` | green |
+| [Gruvbox](https://github.com/morhetz/gruvbox) (dark) | `#282828` | `#ebdbb2` | `#fabd2f` | `#fe8019` | yellow |
 | [Kanagawa](https://github.com/rebelot/kanagawa.nvim) (wave) | `#1f1f28` | `#dcd7ba` | `#7e9cd8` | `#d27e99` | blue |
 | [Nord](https://www.nordtheme.com) | `#2e3440` | `#eceff4` | `#88c0d0` | `#81a1c1` | blue |
+| [Tokyo Night](https://github.com/folke/tokyonight.nvim) (night) | `#1a1b26` | `#c0caf5` | `#7aa2f7` | `#bb9af7` | blue |
 
 More themes are one TOML file each, see [Palettes](#palettes).
 

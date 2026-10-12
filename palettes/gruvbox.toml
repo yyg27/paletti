@@ -1,0 +1,25 @@
+name = "Gruvbox"
+description = "A retro groove color scheme with warm, earthy tones."
+gnome_accent = "yellow"
+icon_color = ["yellow"]
+icon_tint = 0.2
+wallpaper = "wallpapers/gruvbox/autumn-morning-mist.jpg"
+
+[colors]
+bg            = "#282828"
+bg_alt        = "#1d2021"
+fg            = "#ebdbb2"
+surface       = "#504945"
+surface_hover = "#665c54"
+card          = "#3c3836"
+card_alt      = "#32302f"
+card_hover    = "#504945"
+accent        = "#fabd2f"
+accent_hover  = "#fcd06a"
+accent2       = "#fe8019"
+heading       = "#83a598"
+muted         = "#7c6f64"
+
+[terminal]
+palette = ["#282828", "#CC241D", "#98971A", "#D79921", "#458588", "#B16286", "#689D6A", "#A89984",
+           "#928374", "#FB4934", "#B8BB26", "#FABD2F", "#83A598", "#D3869B", "#8EC07C", "#EBDBB2"]

@@ -1,0 +1,24 @@
+name = "Tokyo Night"
+description = "A clean dark theme that celebrates the lights of downtown Tokyo at night."
+gnome_accent = "blue"
+icon_color = ["blue"]
+icon_tint = 0.2
+
+[colors]
+bg            = "#1a1b26"
+bg_alt        = "#16161e"
+fg            = "#c0caf5"
+surface       = "#292e42"
+surface_hover = "#3b4261"
+card          = "#24283b"
+card_alt      = "#1f2335"
+card_hover    = "#292e42"
+accent        = "#7aa2f7"
+accent_hover  = "#96b5f9"
+accent2       = "#bb9af7"
+heading       = "#7dcfff"
+muted         = "#3d59a1"
+
+[terminal]
+palette = ["#15161E", "#F7768E", "#9ECE6A", "#E0AF68", "#7AA2F7", "#BB9AF7", "#7DCFFF", "#A9B1D6",
+           "#414868", "#F7768E", "#9ECE6A", "#E0AF68", "#7AA2F7", "#BB9AF7", "#7DCFFF", "#C0CAF5"]
