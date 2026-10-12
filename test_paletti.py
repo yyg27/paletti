@@ -94,14 +94,14 @@ def test_tela(icons):
 
 
 def test_wallpaper(tmp):
-    own, default = tmp / "own.jpg", paletti.HERE / "wallpapers/dracula/arch.png"
+    own, default = tmp / "own.jpg", paletti.HERE / "wallpapers/dracula/dracula.png"
     own.touch()
     paletti.CONFIG = tmp / "config.toml"
     config = {"wallpaper": "chosen", "wallpapers": {"dracula": [str(own), str(tmp / "missing.jpg")]}}
     paletti.save_config(config)
     assert paletti.load_config() == config  # round trip
 
-    options = paletti.wallpaper_options("dracula", {"wallpaper": "wallpapers/dracula/arch.png"}, config)
+    options = paletti.wallpaper_options("dracula", {"wallpaper": "wallpapers/dracula/dracula.png"}, config)
     assert options == [default, own]  # relative to the project, missing file skipped
     assert paletti.pick_wallpaper(options, "default", own) == default
     assert paletti.pick_wallpaper(options, "chosen", own) == own

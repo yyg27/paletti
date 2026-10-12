@@ -3,7 +3,7 @@ description = "A retro groove color scheme with warm, earthy tones."
 gnome_accent = "yellow"
 icon_color = ["yellow"]
 icon_tint = 0.2
-wallpaper = "wallpapers/gruvbox/autumn-morning-mist.jpg"
+wallpaper = "wallpapers/gruvbox/gruvbox.png"
 
 [colors]
 bg            = "#282828"

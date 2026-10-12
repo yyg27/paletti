@@ -3,6 +3,7 @@ description = "Soothing pastel theme for the high-spirited!"
 gnome_accent = "purple"
 icon_color = ["violet", "purple"]
 icon_tint = 0.2
+wallpaper = "wallpapers/catppuccin-mocha/catppuccin-mocha.png"
 
 [colors]
 bg            = "#1e1e2e"

@@ -3,6 +3,7 @@ description = "A clean dark theme that celebrates the lights of downtown Tokyo a
 gnome_accent = "blue"
 icon_color = ["blue"]
 icon_tint = 0.2
+wallpaper = "wallpapers/tokyo-night/tokyo-night.jpg"
 
 [colors]
 bg            = "#1a1b26"

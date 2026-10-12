@@ -81,7 +81,7 @@ description = "A green based color scheme, designed to be warm and soft."   # no
 gnome_accent = "green"   # blue teal green yellow orange red pink purple slate
 icon_color = ["green"]   # folder color for Papirus / color-variant icon themes
 icon_tint = 0.2          # app icons move 20% toward the accent (Tela only)
-wallpaper = "wallpapers/everforest/forest_stairs.jpg"   # optional, relative to the project
+wallpaper = "wallpapers/everforest/everforest.png"   # optional, relative to the project
 
 [colors]
 bg            = "#2d353b"

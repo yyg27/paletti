@@ -3,7 +3,7 @@ description = "A dark theme inspired by the colors of Hokusai's Great Wave off K
 gnome_accent = "blue"
 icon_color = ["blue"]
 icon_tint = 0.2
-wallpaper = "wallpapers/kanagawa/great-wave.jpg"
+wallpaper = "wallpapers/kanagawa/kanagawa.jpg"
 
 [colors]
 bg            = "#1f1f28"
