@@ -1,6 +1,6 @@
 name = "Cyberpunk"
 description = "Neon yellow, cyan and violet on a midnight purple city."
-gnome_accent = "yellow"
+gnome_accent = "red"
 icon_color = ["yellow"]
 icon_tint = 0.2
 
