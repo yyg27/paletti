@@ -126,6 +126,15 @@ def test_interrupted_swap(icons):
     assert state["icon-theme"] == "Adwaita"
 
 
+def test_window_buttons():
+    """Every palette gets three distinct window button colors."""
+    import re
+    for name in paletti.names():
+        css = paletti.render(paletti.load(name), "gtk4.css")
+        colors = re.findall(r"button\.(?:close|minimize|maximize) > image \{ background-color: (#\w+)", css)
+        assert len(colors) == 3 and len({c.lower() for c in colors}) == 3, (name, colors)
+
+
 def test_adwaita():
     fake_gsettings("Adwaita")
     assert paletti.recolor_icons(["green"], "#a7c080") is None
@@ -138,4 +147,5 @@ if __name__ == "__main__":
             paletti.ICON_THEME_SWAP = Path(tmp) / "icon-theme"
             test(Path(tmp))
     test_adwaita()
+    test_window_buttons()
     print("ok")

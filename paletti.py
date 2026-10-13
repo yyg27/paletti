@@ -89,8 +89,11 @@ def load(name):
 
 
 def render(palette, template="shell.css"):
-    terminal = palette["terminal"]["palette"]  # window buttons use the palette's own red/green/yellow
-    values = {"name": palette["name"], **palette["colors"], "red": terminal[1], "green": terminal[2], "yellow": terminal[3]}
+    c = palette["colors"]
+    # Window buttons: close in the palette's own red, the others in its signature colors.
+    minimize = c["heading"] if c["heading"].lower() != c["accent"].lower() else c["accent2"]
+    values = {"name": palette["name"], **c,
+              "close": palette["terminal"]["palette"][1], "minimize": minimize, "maximize": c["accent"]}
     for role, hex_color in palette["colors"].items():
         h = hex_color.lstrip("#")
         values[f"{role}_rgb"] = ", ".join(str(int(h[i:i + 2], 16)) for i in (0, 2, 4))

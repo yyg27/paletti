@@ -25,8 +25,8 @@
 
 /* Window buttons: palette-colored circles, symbols show on hover. */
 button.titlebutton:not(.appmenu) { color: transparent; min-width: 16px; min-height: 16px; margin: 0 3px; }
-button.titlebutton.close { background: $red; }
-button.titlebutton.minimize { background: $yellow; }
-button.titlebutton.maximize { background: $green; }
+button.titlebutton.close { background: $close; }
+button.titlebutton.minimize { background: $minimize; }
+button.titlebutton.maximize { background: $maximize; }
 button.titlebutton:hover:not(.appmenu) { color: $bg; }
 button.titlebutton:backdrop:not(.appmenu) { background: $surface; }

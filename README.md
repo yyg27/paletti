@@ -32,6 +32,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | GNOME accent color | `org.gnome.desktop.interface accent-color` |
 | GNOME Terminal | Default profile colors and 16-color palette |
 | Dash to Dock | Background color and running-app dots (opacity is left alone) |
+| Window buttons (GTK apps) | Small circles: close in the palette's red, minimize and maximize in its own accent colors |
 | Icons | See [Icons](#icons) |
 | Wallpaper and lock screen | See [Wallpapers](#wallpapers) |
 
@@ -69,7 +70,9 @@ The **Paletti** tile in Quick Settings does the same: click it for the next
 palette, or open its menu to pick one or change the wallpaper.
 
 A notification shows the new theme. Shell, dock and terminal change instantly;
-already open apps pick up new GTK colors when reopened.
+already open apps pick up new GTK colors when reopened. Files and Terminal keep
+running in the background after their last window closes, so quit them first
+(`nautilus -q`, or close every terminal window).
 
 ## Palettes
 

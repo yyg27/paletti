@@ -33,8 +33,8 @@ windowcontrols { border-spacing: 4px; }
 windowcontrols.end { margin-right: 6px; }
 windowcontrols > button { min-width: 16px; padding-left: 4px; padding-right: 4px; }
 windowcontrols > button > image { color: transparent; box-shadow: none; padding: 2px; -gtk-icon-size: 12px; }
-windowcontrols > button.close > image { background-color: $red; }
-windowcontrols > button.minimize > image { background-color: $yellow; }
-windowcontrols > button.maximize > image { background-color: $green; }
+windowcontrols > button.close > image { background-color: $close; }
+windowcontrols > button.minimize > image { background-color: $minimize; }
+windowcontrols > button.maximize > image { background-color: $maximize; }
 windowcontrols > button:hover > image { color: $bg; }
 windowcontrols > button:backdrop > image { background-color: $surface; }
