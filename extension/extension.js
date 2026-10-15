@@ -67,6 +67,7 @@ class PalettiToggle extends QuickSettings.QuickMenuToggle {
     _init() {
         // Not an on/off switch: a click applies the next palette, like Super+Y.
         super._init({title: 'Paletti', iconName: ICON, toggleMode: false});
+        this.checked = true; // always drawn as active, so it takes the accent color
         this.menu.setHeader(ICON, 'Paletti');
         this._palettes = new PopupMenu.PopupMenuSection();
         this.menu.addMenuItem(this._palettes);
