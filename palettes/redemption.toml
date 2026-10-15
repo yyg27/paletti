@@ -1,0 +1,26 @@
+name = "Redemption"
+description = "Outlaws, gunsmoke and worn leather from the Wild West."
+gnome_accent = "red"
+icon_color = ["red"]
+icon_tint = 0.2
+wallpaper = "wallpapers/redemption/redemption.jpg"
+
+[colors]
+bg            = "#141110"
+bg_alt        = "#0d0b0a"
+fg            = "#e8dcc2"
+surface       = "#3a2f2a"
+surface_hover = "#4a3c35"
+card          = "#2a2320"
+card_alt      = "#221c1a"
+card_hover    = "#3a2f2a"
+accent        = "#d9181f"
+accent_hover  = "#e4474c"
+accent2       = "#f0882a"
+heading       = "#a08a62"
+muted         = "#5e4a3a"
+on_accent     = "#e8dcc2"
+
+[terminal]
+palette = ["#1A1614", "#B5281E", "#6B7D3C", "#C9A227", "#4F6D7A", "#8A4F6D", "#6F8F87", "#D8CCB0",
+           "#4A3C35", "#D0473B", "#8A9C55", "#E0BD4A", "#6B8C9B", "#A86B8A", "#8FB0A7", "#F0E6D0"]

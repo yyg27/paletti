@@ -18,6 +18,7 @@ dock, GTK apps, GNOME Terminal, the accent color and the icons. Press
 | [Gruvbox](https://github.com/morhetz/gruvbox) (dark) | `#282828` | `#ebdbb2` | `#fabd2f` | `#fe8019` | yellow |
 | [Kanagawa](https://github.com/rebelot/kanagawa.nvim) (wave) | `#1f1f28` | `#dcd7ba` | `#7e9cd8` | `#d27e99` | blue |
 | [Nord](https://www.nordtheme.com) | `#2e3440` | `#eceff4` | `#88c0d0` | `#81a1c1` | blue |
+| Redemption | `#141110` | `#e8dcc2` | `#d9181f` | `#f0882a` | red |
 | [Tokyo Night](https://github.com/folke/tokyonight.nvim) (night) | `#1a1b26` | `#c0caf5` | `#7aa2f7` | `#bb9af7` | blue |
 
 More themes are one TOML file each, see [Palettes](#palettes).
@@ -118,6 +119,13 @@ palette = ["#343F44", "#E67E80", ...]   # 16 colors
 | `muted` | Selected day, separators |
 
 Every role is required; paletti names the missing ones if a file is incomplete.
+
+Two optional roles go in `[colors]` too:
+
+| Role | Used for | Default |
+| --- | --- | --- |
+| `icons` | Icon recoloring (folders, system apps, app icon tint) | `accent` |
+| `on_accent` | Text on accent fills (active toggles, today, accent buttons) | `bg` |
 Templates use `$role`, and `$role_rgb` (`40, 42, 54`) for `rgba()` values.
 
 ## Icons

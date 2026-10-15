@@ -33,7 +33,7 @@
 .quick-toggle:checked,
 .quick-toggle-has-menu:checked .quick-toggle-menu-button {
   background-color: $accent;
-  color: $bg; }
+  color: $on_accent; }
 .quick-toggle:checked:hover,
 .quick-toggle-has-menu:checked .quick-toggle-menu-button:hover { background-color: $accent_hover; }
 
@@ -43,7 +43,7 @@
   -barlevel-background-color: $surface; }
 
 
-.calendar .calendar-day.calendar-today { background-color: $accent; color: $bg; }
+.calendar .calendar-day.calendar-today { background-color: $accent; color: $on_accent; }
 .message, .events-button, .world-clocks-button, .weather-button { background-color: $card; }
 
 

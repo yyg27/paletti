@@ -93,7 +93,8 @@ def render(palette, template="shell.css"):
     # Window buttons: close in the palette's own red, the others in its signature colors.
     minimize = c["heading"] if c["heading"].lower() != c["accent"].lower() else c["accent2"]
     values = {"name": palette["name"], **c,
-              "close": palette["terminal"]["palette"][1], "minimize": minimize, "maximize": c["accent"]}
+              "close": palette["terminal"]["palette"][1], "minimize": minimize, "maximize": c["accent"],
+              "on_accent": c.get("on_accent", c["bg"])}  # text on accent fills, bg unless the palette says otherwise
     for role, hex_color in palette["colors"].items():
         h = hex_color.lstrip("#")
         values[f"{role}_rgb"] = ", ".join(str(int(h[i:i + 2], 16)) for i in (0, 2, 4))

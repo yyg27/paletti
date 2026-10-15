@@ -1,6 +1,6 @@
 /* paletti-generated ($name). adw-gtk3 reads these color names. */
 @define-color accent_bg_color $accent;
-@define-color accent_fg_color $bg;
+@define-color accent_fg_color $on_accent;
 @define-color accent_color $accent;
 
 @define-color window_bg_color $bg;

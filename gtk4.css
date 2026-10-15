@@ -1,7 +1,7 @@
 /* paletti-generated ($name). Do not edit by hand, overwritten on the next theme switch. */
 :root {
   --accent-bg-color: $accent;
-  --accent-fg-color: $bg;
+  --accent-fg-color: $on_accent;
   --accent-color: $accent;
 
   --window-bg-color: $bg;
