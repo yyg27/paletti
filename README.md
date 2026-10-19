@@ -33,6 +33,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | GNOME accent color | `org.gnome.desktop.interface accent-color` |
 | GNOME Terminal | Default profile colors and 16-color palette |
 | Dash to Dock | Background color and running-app dots (opacity is left alone) |
+| Blur my Shell | Top bar, menu and dock blur turned off; their shapes show around paletti's |
 | Window buttons (GTK apps) | Small circles: close in the palette's red, minimize and maximize in its own accent colors |
 | Icons | See [Icons](#icons) |
 | Wallpaper and lock screen | See [Wallpapers](#wallpapers) |

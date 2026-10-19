@@ -279,6 +279,11 @@ def apply(name):
     ext_gset(*dock, "custom-theme-running-dots-color", c["accent"])
     ext_gset(*dock, "custom-theme-running-dots-border-color", c["accent"])
 
+    # Blur my Shell draws its own blurred shapes behind the top bar, menus and dock.
+    # They don't match the islands and corners above and show around them.
+    for part in ["panel", "popup", "dash-to-dock"]:
+        ext_gset("blur-my-shell@aunetx", f"org.gnome.shell.extensions.blur-my-shell.{part}", "blur", "false")
+
     # GNOME accent color and apps. A gtk.css that predates paletti is backed up
     # once; newly opened apps pick up the new colors.
     sh("gsettings", "set", "org.gnome.desktop.interface", "accent-color", palette["gnome_accent"])
