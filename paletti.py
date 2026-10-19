@@ -344,8 +344,10 @@ def apply_icons(name):
     message = recolor_icons(palette["icon_color"], c.get("icons", c["accent"]), palette.get("icon_tint", 0.0))
     if message:
         print(message, file=sys.stderr)
-    # Last, so it shows up once everything, icons included, has switched.
-    sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"], palette.get("description", ""))
+    # Last, so it shows up once everything, icons included, has switched. This job
+    # runs detached, so the notification is the only place an icon problem is seen.
+    sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"],
+       message or palette.get("description", ""))
 
 
 def load_config():
