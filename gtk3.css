@@ -24,7 +24,8 @@
 @define-color card_fg_color $fg;
 
 /* Window buttons: palette-colored circles, symbols show on hover. */
-button.titlebutton:not(.appmenu) { color: transparent; min-width: 16px; min-height: 16px; margin: 0 3px; }
+button.titlebutton:not(.appmenu) { color: transparent; min-width: 16px; min-height: 16px; padding: 0; margin: 0 4px; border: none; border-radius: 9999px; box-shadow: none; }
+button.titlebutton:not(.appmenu) image { -gtk-icon-transform: scale(0.75); }
 button.titlebutton.close { background: $close; }
 button.titlebutton.minimize { background: $minimize; }
 button.titlebutton.maximize { background: $maximize; }
