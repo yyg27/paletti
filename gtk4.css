@@ -32,7 +32,8 @@
 windowcontrols { border-spacing: 4px; }
 windowcontrols.end { margin-right: 6px; }
 windowcontrols > button { min-width: 16px; padding-left: 4px; padding-right: 4px; }
-windowcontrols > button > image { color: transparent; box-shadow: none; padding: 2px; -gtk-icon-size: 12px; }
+/* min sizes: GTK's own theme (used by Chromium) gives the image 30px, libadwaita none. */
+windowcontrols > button > image { color: transparent; box-shadow: none; padding: 2px; min-width: 0; min-height: 0; -gtk-icon-size: 12px; }
 windowcontrols > button.close > image { background-color: $close; }
 windowcontrols > button.minimize > image { background-color: $minimize; }
 windowcontrols > button.maximize > image { background-color: $maximize; }
