@@ -15,6 +15,7 @@
 
 import ast
 import colorsys
+import fcntl
 import json
 import os
 import re
@@ -33,6 +34,7 @@ HOME = Path.home()
 EXTENSIONS = HOME / ".local/share/gnome-shell/extensions"
 THEME_CSS = HOME / ".local/share/themes/Islands/gnome-shell/gnome-shell.css"
 STATE = HOME / ".local/state/paletti/current"
+LOCK = HOME / ".local/state/paletti/lock"
 ICONS_PID = HOME / ".local/state/paletti/icons.pid"
 ICON_THEME_SWAP = HOME / ".local/state/paletti/icon-theme"  # exists only mid set_icon_theme
 CONFIG = HOME / ".config/paletti/config.toml"
@@ -60,6 +62,7 @@ SYSTEM_APPS = ["org.gnome.Nautilus", "org.gnome.Settings", "org.gnome.Terminal",
                "org.gnome.Software", "org.gnome.Calendar", "org.gnome.clocks", "org.gnome.Weather",
                "org.gnome.Logs", "org.gnome.Extensions", "org.gnome.FileRoller", "org.gnome.Characters"]
 HEX = re.compile(rb"#([0-9a-fA-F]{6})\b")
+HEX_COLOR = re.compile(r"#[0-9a-fA-F]{6}")
 
 
 def saturated(hex_color):
@@ -81,10 +84,22 @@ def names():
 
 
 def load(name):
+    """Checks everything apply needs up front, so a bad file never half-applies a theme."""
     palette = tomllib.loads((PALETTES / f"{name}.toml").read_text())
-    missing = [r for r in ROLES if r not in palette["colors"]]
-    if missing:
-        sys.exit(f"{name}.toml is missing color roles: {', '.join(missing)}")
+    colors = palette.get("colors", {})
+    terminal = palette.get("terminal", {}).get("palette", [])
+    problems = [f"missing {key}" for key in ("name", "gnome_accent", "icon_color") if key not in palette]
+    if not isinstance(palette.get("icon_color", []), list):
+        problems.append('icon_color must be a list, like ["green"]')
+    problems += [f"missing color role {role}" for role in ROLES if role not in colors]
+    problems += [f"{role} = {value!r} is not #rrggbb" for role, value in colors.items()
+                 if not HEX_COLOR.fullmatch(str(value))]
+    if len(terminal) != 16 or not all(HEX_COLOR.fullmatch(str(value)) for value in terminal):
+        problems.append("[terminal] palette needs 16 #rrggbb colors")
+    if problems:
+        message = f"{name}.toml: {'; '.join(problems)}"
+        sh("notify-send", "-a", "Paletti", "Paletti palette error", message)  # shortcuts have no terminal
+        sys.exit(message)
     return palette
 
 
@@ -148,18 +163,20 @@ def recolor_tela(accent, tint=0.0):
             tmp = dst.with_name(dst.name + ".partial")
             shutil.rmtree(tmp, ignore_errors=True)
             shutil.copytree(src, tmp, symlinks=True)
-            tmp.rename(dst)
-            index = dst / "index.theme"
+            # Fixed up before the rename: a job stopped halfway leaves only .partial,
+            # which the next job starts over, never a finished-looking broken copy.
+            index = tmp / "index.theme"
             index.write_text(index.read_text().replace("Name=Tela circle", "Name=Tela circle paletti", 1))
             # -dark links into the base theme at any depth (../../Tela-circle/16/apps).
             base_link = re.compile(r"^((?:\.\./)+)Tela-circle/")
-            for dirpath, dirnames, filenames in os.walk(dst):  # links land in both lists
+            for dirpath, dirnames, filenames in os.walk(tmp):  # links land in both lists
                 for name in dirnames + filenames:
                     link = Path(dirpath) / name
                     if link.is_symlink() and base_link.match(os.readlink(link)):
                         target = base_link.sub(r"\1Tela-circle-paletti/", os.readlink(link))
                         link.unlink()
                         link.symlink_to(target)
+            tmp.rename(dst)
         for dirpath, _, filenames in os.walk(src):
             for filename in filenames:
                 source = Path(dirpath) / filename
@@ -284,13 +301,15 @@ def apply(name):
     for part in ["panel", "popup", "dash-to-dock"]:
         ext_gset("blur-my-shell@aunetx", f"org.gnome.shell.extensions.blur-my-shell.{part}", "blur", "false")
 
-    # GNOME accent color and apps. A gtk.css that predates paletti is backed up
-    # once; newly opened apps pick up the new colors.
+    # GNOME accent color and apps. A gtk.css paletti did not write is backed up,
+    # never over an earlier backup; newly opened apps pick up the new colors.
     sh("gsettings", "set", "org.gnome.desktop.interface", "accent-color", palette["gnome_accent"])
     for template, target in GTK_CSS.items():
         target.parent.mkdir(parents=True, exist_ok=True)
-        backup = target.with_name("gtk.css.before-paletti")
-        if target.exists() and not backup.exists() and not target.read_text().startswith("/* paletti"):
+        if target.exists() and not target.read_text().startswith("/* paletti"):
+            backup = target.with_name("gtk.css.before-paletti")
+            if backup.exists():
+                backup = target.with_name(f"gtk.css.before-paletti.{time.time_ns()}")
             target.rename(backup)
         target.write_text(render(palette, template))
 
@@ -351,7 +370,14 @@ def apply_icons(name):
 
 
 def load_config():
-    return tomllib.loads(CONFIG.read_text()) if CONFIG.exists() else {}
+    """None when the file is broken; the error is shown, since shortcuts have no terminal."""
+    try:
+        return tomllib.loads(CONFIG.read_text()) if CONFIG.exists() else {}
+    except tomllib.TOMLDecodeError as e:
+        message = f"{CONFIG} is not valid TOML, wallpaper left alone: {e}"
+        print(message, file=sys.stderr)
+        sh("notify-send", "-a", "Paletti", "Paletti config error", message)
+        return None
 
 
 def save_config(config):
@@ -402,6 +428,8 @@ def chosen_wallpaper(name):
 
 def apply_wallpaper(name, palette):
     config = load_config()
+    if config is None:
+        return  # the theme switch goes on without it
     options = wallpaper_options(name, palette, config)
     wallpaper = pick_wallpaper(options, config.get("wallpaper", "default"), chosen_wallpaper(name))
     if wallpaper:
@@ -419,6 +447,8 @@ def next_wallpaper():
     """Cycles the current palette's wallpapers and remembers the pick."""
     name = current_name()
     config = load_config()
+    if config is None:
+        sys.exit(1)  # saving now would overwrite the user's wallpaper list
     palette = load(name)
     options = wallpaper_options(name, palette, config)
     if not options:
@@ -436,6 +466,8 @@ def next_wallpaper():
 
 def set_wallpaper_mode(mode):
     config = load_config()
+    if config is None:
+        sys.exit(1)  # saving now would overwrite the user's wallpaper list
     config["wallpaper"] = mode
     save_config(config)
     name = current_name()
@@ -448,6 +480,15 @@ def next_name():
     current = STATE.read_text().strip() if STATE.exists() else None
     i = all_names.index(current) if current in all_names else -1
     return all_names[(i + 1) % len(all_names)]
+
+
+def locked():
+    """One switch at a time: a quick second Super+Y waits for this one instead of
+    reading the same current palette and racing it."""
+    LOCK.parent.mkdir(parents=True, exist_ok=True)
+    lock = LOCK.open("w")
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    return lock  # closing it releases the lock
 
 
 def install():
@@ -493,10 +534,9 @@ def main(args):
         next_wallpaper()
     elif len(args) == 2 and args[0] == "--wallpaper" and args[1] in WALLPAPER_MODES:
         set_wallpaper_mode(args[1])
-    elif not args:
-        apply(next_name())
-    elif len(args) == 1 and args[0] in names():
-        apply(args[0])
+    elif not args or (len(args) == 1 and args[0] in names()):
+        with locked():
+            apply(args[0] if args else next_name())
     else:
         sys.exit(__doc__)
 

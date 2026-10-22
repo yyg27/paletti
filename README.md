@@ -119,7 +119,8 @@ palette = ["#343F44", "#E67E80", ...]   # 16 colors
 | `heading` | Calendar day headings |
 | `muted` | Selected day, separators |
 
-Every role is required; paletti names the missing ones if a file is incomplete.
+Every role is required. paletti checks the whole file before switching and names
+what is missing or not `#rrggbb` (in a notification, too).
 
 Two optional roles go in `[colors]` too:
 
@@ -171,8 +172,9 @@ rewrites the config file, so comments added by hand are not kept.
 
 ## Backups
 
-The first run moves an existing `gtk.css` to `gtk.css.before-paletti` in
-`~/.config/gtk-3.0/` and `~/.config/gtk-4.0/`. The `Islands` shell theme and the
+A `gtk.css` paletti did not write is moved to `gtk.css.before-paletti` in
+`~/.config/gtk-3.0/` and `~/.config/gtk-4.0/`; if that backup already exists, a
+timestamp is added to the name, so no backup is ever overwritten. The `Islands` shell theme and the
 Tela copy are generated files and are overwritten on every switch.
 
 ## Tests
@@ -181,7 +183,8 @@ Tela copy are generated files and are overwritten on every switch.
 python3 test_paletti.py
 ```
 
-Covers icon recoloring on fake icon folders. The Tela test runs against the
+Covers icon recoloring on fake icon folders, wallpapers, palette and config
+checks, and the `gtk.css` backup. The Tela test runs against the
 installed package, or against an extracted one with `TELA_SRC_TEST=/path/to/icons`.
 
 ## License

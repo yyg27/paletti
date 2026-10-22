@@ -135,13 +135,59 @@ def test_window_buttons():
         assert len(colors) == 3 and len({c.lower() for c in colors}) == 3, (name, colors)
 
 
+def test_broken_palette(tmp):
+    paletti.sh = lambda *cmd: ""
+    paletti.PALETTES = tmp
+    (tmp / "broken.toml").write_text('name = "Broken"\n[colors]\nbg = "#fff"\n')
+    try:
+        paletti.load("broken")
+        raise AssertionError("broken palette was accepted")
+    except SystemExit as e:
+        for problem in ["gnome_accent", "bg_alt", "'#fff'", "16"]:
+            assert problem in str(e), (problem, str(e))
+    finally:
+        paletti.PALETTES = paletti.HERE / "palettes"
+
+
+def test_gtk_backup(tmp):
+    """A gtk.css paletti did not write is moved aside, never overwritten."""
+    paletti.sh = lambda *cmd: ""
+    paletti.start_icons = lambda name: None
+    paletti.THEME_CSS, paletti.STATE, paletti.CONFIG = tmp / "shell.css", tmp / "current", tmp / "config.toml"
+    target = tmp / "gtk.css"
+    paletti.GTK_CSS = {"gtk4.css": target}
+    for own in ["mine 1", "mine 2"]:
+        target.write_text(own)
+        paletti.apply("dracula")
+        assert target.read_text().startswith("/* paletti")
+    paletti.apply("dracula")  # its own file is not backed up
+    assert sorted(p.read_text() for p in tmp.glob("gtk.css.before-paletti*")) == ["mine 1", "mine 2"]
+    assert paletti.STATE.read_text() == "dracula"
+
+
+def test_broken_config(tmp):
+    paletti.sh = lambda *cmd: ""
+    paletti.CONFIG = tmp / "config.toml"
+    paletti.CONFIG.write_text('wallpaper = "chosen\n')
+    assert paletti.load_config() is None
+    paletti.apply_wallpaper("dracula", {})  # skipped, no crash
+    paletti.STATE = tmp / "current"
+    paletti.STATE.write_text("dracula")
+    try:
+        paletti.next_wallpaper()
+        raise AssertionError("broken config was saved over")
+    except SystemExit:
+        assert paletti.CONFIG.read_text() == 'wallpaper = "chosen\n'
+
+
 def test_adwaita():
     fake_gsettings("Adwaita")
     assert paletti.recolor_icons(["green"], "#a7c080") is None
 
 
 if __name__ == "__main__":
-    for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap]:
+    for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
+                 test_broken_palette, test_broken_config, test_gtk_backup]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
             paletti.ICON_THEME_SWAP = Path(tmp) / "icon-theme"
