@@ -268,7 +268,7 @@ def recolor_icons(colors, accent, tint=0.0):
                 if candidate != theme:
                     set_icon_theme(candidate)
                 return None
-    # manbun: themes naming colors differently (Qogir-manjaro = green) need a name map, add when someone uses one.
+    # shortcut: themes naming colors differently (Qogir-manjaro = green) are left unchanged, add a name map when someone uses one.
     return f"Icon theme {theme} has no {'/'.join(colors)} variant installed, icons unchanged."
 
 
@@ -381,7 +381,7 @@ def load_config():
 
 
 def save_config(config):
-    # manbun: rewrites the file, so hand-written comments in it are lost.
+    # shortcut: rewrites the file, so hand-written comments in it are lost; keep them once someone asks.
     lines = [f'wallpaper = "{config.get("wallpaper", "default")}"   # default | chosen | keep', "",
              "[wallpapers]   # your own wallpapers per palette, cycled with Super+Shift+Y"]
     lines += [f"{name} = {json.dumps(paths)}" for name, paths in config.get("wallpapers", {}).items()]
@@ -436,8 +436,12 @@ def apply_wallpaper(name, palette):
         set_wallpaper(wallpaper)
 
 
+def saved_name():
+    return STATE.read_text().strip() if STATE.exists() else None
+
+
 def current_name():
-    name = STATE.read_text().strip() if STATE.exists() else None
+    name = saved_name()
     if name not in names():
         sys.exit("No palette applied yet, run paletti first.")
     return name
@@ -477,7 +481,7 @@ def set_wallpaper_mode(mode):
 
 def next_name():
     all_names = names()
-    current = STATE.read_text().strip() if STATE.exists() else None
+    current = saved_name()
     i = all_names.index(current) if current in all_names else -1
     return all_names[(i + 1) % len(all_names)]
 
