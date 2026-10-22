@@ -494,12 +494,16 @@ def locked():
 def install():
     link = HOME / ".local/bin/paletti"
     link.parent.mkdir(parents=True, exist_ok=True)
+    if link.is_symlink():  # re-pointed, so a moved checkout keeps working
+        link.unlink()
     if not link.exists():
         link.symlink_to(Path(__file__).resolve())
 
     # The transition extension. A newly installed extension loads after logging
     # out and back in, so it is enabled through gsettings.
     extension = EXTENSIONS / EXTENSION_UUID
+    if extension.is_symlink():
+        extension.unlink()
     if not extension.exists():
         extension.symlink_to(HERE / "extension")
     enabled = ast.literal_eval(sh("gsettings", "get", "org.gnome.shell", "enabled-extensions").removeprefix("@as "))
