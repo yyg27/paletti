@@ -165,6 +165,27 @@ def test_gtk_backup(tmp):
     assert paletti.STATE.read_text() == "dracula"
 
 
+def test_firefox(tmp):
+    """The default profile gets userChrome.css and the pref, the user's own prefs stay."""
+    paletti.sh = lambda *cmd: ""
+    paletti.start_icons = lambda name: None
+    paletti.THEME_CSS, paletti.STATE, paletti.CONFIG = tmp / "shell.css", tmp / "current", tmp / "config.toml"
+    paletti.GTK_CSS = {}
+    root = tmp / "firefox"
+    for profile in ["abc.default-release", "old.default"]:
+        (root / profile).mkdir(parents=True)
+    (root / "installs.ini").write_text("[Install4F96D1932A9F858E]\nDefault=abc.default-release\nLocked=1\n")
+    user_js = root / "abc.default-release/user.js"
+    user_js.write_text('user_pref("browser.startup.page", 3);\n')
+    for name in ["dracula", "nord"]:
+        paletti.apply(name)
+    css = (root / "abc.default-release/chrome/userChrome.css").read_text()
+    assert css.startswith("/* paletti-generated (Nord)") and "$" not in css
+    assert user_js.read_text().count("legacyUserProfileCustomizations") == 1
+    assert user_js.read_text().startswith('user_pref("browser.startup.page", 3);')
+    assert not (root / "old.default/chrome").exists()  # not the profile Firefox starts with
+
+
 def test_broken_config(tmp):
     paletti.sh = lambda *cmd: ""
     paletti.CONFIG = tmp / "config.toml"
@@ -187,9 +208,10 @@ def test_adwaita():
 
 if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
-                 test_broken_palette, test_broken_config, test_gtk_backup]:
+                 test_broken_palette, test_broken_config, test_gtk_backup, test_firefox]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
+            paletti.FIREFOX_DIRS = [Path(tmp) / "firefox"]  # apply never touches the real profile
             paletti.ICON_THEME_SWAP = Path(tmp) / "icon-theme"
             test(Path(tmp))
     test_adwaita()

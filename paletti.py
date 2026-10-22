@@ -15,6 +15,7 @@
 
 import ast
 import colorsys
+import configparser
 import fcntl
 import json
 import os
@@ -43,6 +44,7 @@ WALLPAPER_MODES = ("default", "chosen", "keep")
 
 GTK_CSS = {"gtk4.css": HOME / ".config/gtk-4.0/gtk.css",
            "gtk3.css": HOME / ".config/gtk-3.0/gtk.css"}
+FIREFOX_DIRS = [HOME / ".config/mozilla/firefox", HOME / ".mozilla/firefox"]  # newer and older location
 
 ROLES = ["bg", "bg_alt", "fg", "surface", "surface_hover", "card", "card_alt", "card_hover",
          "accent", "accent_hover", "accent2", "heading", "muted"]
@@ -301,17 +303,19 @@ def apply(name):
     for part in ["panel", "popup", "dash-to-dock"]:
         ext_gset("blur-my-shell@aunetx", f"org.gnome.shell.extensions.blur-my-shell.{part}", "blur", "false")
 
-    # GNOME accent color and apps. A gtk.css paletti did not write is backed up,
-    # never over an earlier backup; newly opened apps pick up the new colors.
+    # GNOME accent color and apps; newly opened apps pick up the new colors.
     sh("gsettings", "set", "org.gnome.desktop.interface", "accent-color", palette["gnome_accent"])
     for template, target in GTK_CSS.items():
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if target.exists() and not target.read_text().startswith("/* paletti"):
-            backup = target.with_name("gtk.css.before-paletti")
-            if backup.exists():
-                backup = target.with_name(f"gtk.css.before-paletti.{time.time_ns()}")
-            target.rename(backup)
-        target.write_text(render(palette, template))
+        write_generated(target, render(palette, template))
+
+    # Firefox draws its own window buttons; it reads userChrome.css on its next start.
+    for profile in firefox_profiles():
+        write_generated(profile / "chrome/userChrome.css", render(palette, "firefox.css"))
+        user_js = profile / "user.js"
+        pref = 'user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);'
+        if pref not in (user_js.read_text() if user_js.exists() else ""):
+            with user_js.open("a") as f:  # appended, the user's own prefs stay
+                f.write(pref + "\n")
 
     apply_wallpaper(name, palette)
 
@@ -338,6 +342,27 @@ def apply(name):
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(name)
     start_icons(name)
+
+
+def write_generated(target, text):
+    """A file paletti did not write is backed up first, never over an earlier backup."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists() and not target.read_text().startswith("/* paletti"):
+        backup = target.with_name(f"{target.name}.before-paletti")
+        if backup.exists():
+            backup = target.with_name(f"{target.name}.before-paletti.{time.time_ns()}")
+        target.rename(backup)
+    target.write_text(text)
+
+
+def firefox_profiles():
+    """The profile each Firefox install starts with (Default in installs.ini)."""
+    profiles = []
+    for root in FIREFOX_DIRS:
+        installs = configparser.ConfigParser()
+        installs.read(root / "installs.ini")
+        profiles += [root / s["Default"] for s in installs.values() if "Default" in s and (root / s["Default"]).is_dir()]
+    return profiles
 
 
 def start_icons(name):

@@ -35,6 +35,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | Dash to Dock | Background color and running-app dots (opacity is left alone) |
 | Blur my Shell | Top bar, menu and dock blur turned off; their shapes show around paletti's |
 | Window buttons (GTK apps) | Small circles: close in the palette's red, minimize and maximize in its own accent colors |
+| Window buttons (Firefox) | The same circles through `chrome/userChrome.css` in the default profile, from `firefox.css`; `user.js` turns on `toolkit.legacyUserProfileCustomizations.stylesheets`. Firefox picks them up on its next start |
 | Icons | See [Icons](#icons) |
 | Wallpaper and lock screen | See [Wallpapers](#wallpapers) |
 
@@ -42,7 +43,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 
 - GNOME Shell (built and tested on GNOME 51) with the **User Themes** extension
 - Python 3.11+ (standard library only)
-- Optional: Dash to Dock, GNOME Terminal, `adw-gtk3`, Tela-circle or Papirus icons.
+- Optional: Dash to Dock, GNOME Terminal, Firefox, `adw-gtk3`, Tela-circle or Papirus icons.
   Anything missing is skipped.
 
 ## Install
@@ -173,7 +174,7 @@ rewrites the config file, so comments added by hand are not kept.
 ## Backups
 
 A `gtk.css` paletti did not write is moved to `gtk.css.before-paletti` in
-`~/.config/gtk-3.0/` and `~/.config/gtk-4.0/`; if that backup already exists, a
+`~/.config/gtk-3.0/` and `~/.config/gtk-4.0/`, the same for Firefox's `userChrome.css`; if that backup already exists, a
 timestamp is added to the name, so no backup is ever overwritten. The `Islands` shell theme and the
 Tela copy are generated files and are overwritten on every switch.
 

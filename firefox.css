@@ -1,0 +1,10 @@
+/* paletti-generated ($name). Do not edit by hand, overwritten on the next theme switch. */
+/* Window buttons like GTK apps: palette-colored circles, symbols show on hover.
+   userChrome.css is a user sheet, so it needs !important to beat Firefox's own. */
+.titlebar-buttonbox { --titlebar-button-size: 16px !important; }
+.titlebar-button > .toolbarbutton-icon { stroke: transparent !important; background-size: 12px !important; }
+.titlebar-close > .toolbarbutton-icon { background-color: $close !important; }
+.titlebar-min > .toolbarbutton-icon { background-color: $minimize !important; }
+.titlebar-max > .toolbarbutton-icon, .titlebar-restore > .toolbarbutton-icon { background-color: $maximize !important; }
+.titlebar-button:hover > .toolbarbutton-icon { stroke: $bg !important; }
+:root:-moz-window-inactive .titlebar-button > .toolbarbutton-icon { background-color: $surface !important; }
