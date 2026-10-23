@@ -73,7 +73,7 @@ def saturated(hex_color):
     return saturation > 0.25 and 0.12 < lightness < 0.92
 
 # Screen crossfade from extension/ (GNOME's dark style transition): hold the old
-# screen this long, then fade it out. Icons land ~1s in, near the end of the fade.
+# screen this long, then fade it out. Icons of an already built palette land within it.
 EXTENSION_UUID = "paletti@yyg27"
 TRANSITION_MS = (350, 800)
 
@@ -152,33 +152,58 @@ def mix(hex_color, accent, amount):
                    for i in (0, 2, 4))
 
 
+def tela_name(accent, tint):
+    return f"Tela-circle-paletti-{accent[1:].lower()}-t{round(tint * 100)}"
+
+
+def copy_tela(src, dst, links_from, copy_function):
+    """dst.partial as a copy of src, hidden from icon theme pickers, with -dark's
+    links into the light theme (../../Tela-circle/16/apps) pointed at dst's own.
+    The caller renames it to dst when done: a job stopped halfway leaves only
+    .partial, which the next job starts over, never a finished-looking broken copy."""
+    tmp = dst.with_name(dst.name + ".partial")
+    shutil.rmtree(tmp, ignore_errors=True)
+    shutil.copytree(src, tmp, symlinks=True, copy_function=copy_function)
+    index = tmp / "index.theme"
+    text = index.read_text()
+    index.unlink()  # may be a hard link into the base copy
+    text = re.sub(r"^Name=.*$", f"Name={dst.name}", text, count=1, flags=re.MULTILINE)
+    index.write_text(text.replace("[Icon Theme]", "[Icon Theme]\nHidden=true", 1))
+    base_link = re.compile(rf"^((?:\.\./)+){re.escape(links_from)}/")
+    links_to = dst.name.removesuffix("-dark")
+    for dirpath, dirnames, filenames in os.walk(tmp):  # links land in both lists
+        for name in dirnames + filenames:
+            link = Path(dirpath) / name
+            if link.is_symlink() and base_link.match(os.readlink(link)):
+                target = base_link.sub(rf"\g<1>{links_to}/", os.readlink(link))
+                link.unlink()
+                link.symlink_to(target)
+    return tmp
+
+
 def recolor_tela(accent, tint=0.0):
-    """Writes Tela-circle-paletti(-dark): the installed Tela-circle with its blue
-    replaced by the accent and app icons tinted toward it. Always rewritten from
-    the source, so colors never drift across theme switches."""
+    """Builds tela_name(accent, tint)(-dark): the installed Tela-circle with its blue
+    replaced by the accent and app icons tinted toward it. Each is built once and
+    kept, so switching back to a palette only changes the theme name. Files left
+    as they are hard links into one shared base copy, so each costs ~8 MB."""
+    # shortcut: built themes are never rebuilt or deleted, so a Tela update or an
+    # old accent leaves stale ones; clear ~/.local/share/icons/Tela-circle-paletti-* then.
     for variant in ["", "-dark"]:
         src = TELA_SRC / f"Tela-circle{variant}"
-        dst = ICON_DIRS[0] / f"Tela-circle-paletti{variant}"
         if not src.is_dir():
             return "Tela-circle not found, install tela-circle-icon-theme-standard."
-        if not dst.exists():
-            tmp = dst.with_name(dst.name + ".partial")
-            shutil.rmtree(tmp, ignore_errors=True)
-            shutil.copytree(src, tmp, symlinks=True)
-            # Fixed up before the rename: a job stopped halfway leaves only .partial,
-            # which the next job starts over, never a finished-looking broken copy.
-            index = tmp / "index.theme"
-            index.write_text(index.read_text().replace("Name=Tela circle", "Name=Tela circle paletti", 1))
-            # -dark links into the base theme at any depth (../../Tela-circle/16/apps).
-            base_link = re.compile(r"^((?:\.\./)+)Tela-circle/")
-            for dirpath, dirnames, filenames in os.walk(tmp):  # links land in both lists
-                for name in dirnames + filenames:
-                    link = Path(dirpath) / name
-                    if link.is_symlink() and base_link.match(os.readlink(link)):
-                        target = base_link.sub(r"\1Tela-circle-paletti/", os.readlink(link))
-                        link.unlink()
-                        link.symlink_to(target)
-            tmp.rename(dst)
+        dst = ICON_DIRS[0] / f"{tela_name(accent, tint)}{variant}"
+        if dst.exists():
+            continue
+        base = ICON_DIRS[0] / f"Tela-circle-paletti-base{variant}"
+        if not base.exists():
+            copy_tela(src, base, "Tela-circle", shutil.copy2).rename(base)
+        tmp = copy_tela(base, dst, "Tela-circle-paletti-base", os.link)
+
+        def put(rel, data):
+            (tmp / rel).unlink()  # a hard link: writing in place would change the base
+            (tmp / rel).write_bytes(data)
+
         for dirpath, _, filenames in os.walk(src):
             for filename in filenames:
                 source = Path(dirpath) / filename
@@ -186,18 +211,16 @@ def recolor_tela(accent, tint=0.0):
                     continue
                 data = source.read_bytes()
                 if TELA_BLUE.search(data):
-                    (dst / source.relative_to(src)).write_bytes(TELA_BLUE.sub(accent.encode(), data))
-        # App icons: a light tint toward the accent. Rewritten even at tint 0, so a
-        # previous theme's tint never stays behind.
+                    put(source.relative_to(src), TELA_BLUE.sub(accent.encode(), data))
+        # App icons: a light tint toward the accent.
         apps = src / "scalable/apps"
-        if apps.is_dir() and apps.resolve().is_relative_to(src.resolve()):  # -dark links it to the base
+        if tint and apps.is_dir() and apps.resolve().is_relative_to(src.resolve()):  # -dark links it to the base
             for source in apps.glob("*.svg"):
                 if source.is_symlink():
                     continue
                 data = TELA_BLUE.sub(accent.encode(), source.read_bytes())
-                if tint:
-                    data = HEX.sub(lambda m: b"#" + mix(m.group(1).decode().lower(), accent, tint).encode(), data)
-                (dst / source.relative_to(src)).write_bytes(data)
+                put(source.relative_to(src),
+                    HEX.sub(lambda m: b"#" + mix(m.group(1).decode().lower(), accent, tint).encode(), data))
         # System app icons: recolor the real file, so every alias name links to it.
         for app in SYSTEM_APPS:
             icon = src / "scalable/apps" / f"{app}.svg"
@@ -205,7 +228,8 @@ def recolor_tela(accent, tint=0.0):
                 real = icon.resolve()
                 data = HEX.sub(lambda m: accent.encode() if saturated(m.group(1).decode()) else m.group(0),
                                real.read_bytes())
-                (dst / real.relative_to(src.resolve())).write_bytes(data)
+                put(real.relative_to(src.resolve()), data)
+        tmp.rename(dst)
     return None
 
 
@@ -216,10 +240,12 @@ def recolor_icons(colors, accent, tint=0.0):
         theme = ICON_THEME_SWAP.read_text().strip()
     if theme.lower().startswith("adwaita"):
         return None  # Adwaita folders already follow the GNOME accent color.
-    if theme in ("Tela-circle", "Tela-circle-dark", "Tela-circle-paletti", "Tela-circle-paletti-dark"):
+    if theme in ("Tela-circle", "Tela-circle-dark") or theme.startswith("Tela-circle-paletti"):
         message = recolor_tela(accent, tint)
-        if message is None:
-            set_icon_theme("Tela-circle-paletti-dark" if theme.endswith("dark") else "Tela-circle-paletti")
+        new = tela_name(accent, tint) + ("-dark" if theme.endswith("dark") else "")
+        if message is None and new != theme:
+            # A new name reloads icons by itself, no Adwaita swap needed.
+            sh("gsettings", "set", "org.gnome.desktop.interface", "icon-theme", new)
         return message
     path = find_icon_theme(theme)
     if path is None:

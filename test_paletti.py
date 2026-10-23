@@ -70,27 +70,31 @@ def test_tela(icons):
     broken_in_package = {p.relative_to(src / p.relative_to(src).parts[0]) for v in ["Tela-circle", "Tela-circle-dark"]
                          for p in (src / v).rglob("*") if p.is_symlink() and not p.exists()}
     state = fake_gsettings("Tela-circle-dark")
+    blender_src = (src / "Tela-circle/scalable/apps/blender.svg").resolve().read_bytes()
     for accent in ["#bd93f9", "#a7c080"]:
         assert paletti.recolor_icons([], accent) is None
-        assert state["icon-theme"] == "Tela-circle-paletti-dark"
-        out = icons / "Tela-circle-paletti-dark"
+        assert state["icon-theme"] == paletti.tela_name(accent, 0) + "-dark"
+        out = icons / state["icon-theme"]
         folder = (out / "scalable/places/folder.svg").resolve().read_bytes()
         assert accent.encode() in folder and b"5294e2" not in folder.lower()
         # System apps take the accent, third-party apps keep their own colors.
         editor = (out / "scalable/apps/org.gnome.TextEditor.svg").resolve().read_bytes().lower()
         assert accent.encode() in editor and b"#32a3d7" not in editor
-        blender_out = (out / "scalable/apps/blender.svg").resolve()
-        blender_src = (src / "Tela-circle/scalable/apps/blender.svg").resolve().read_bytes()
-        assert blender_out.read_bytes() == blender_src  # tint 0: untouched
+        assert (out / "scalable/apps/blender.svg").resolve().read_bytes() == blender_src  # tint 0: untouched
         assert paletti.recolor_icons([], accent, 0.2) is None
-        assert blender_out.read_bytes() != blender_src  # tinted
-        assert accent.encode() in (out / "scalable/apps/org.gnome.TextEditor.svg").resolve().read_bytes()
+        tinted = icons / state["icon-theme"]
+        assert (tinted / "scalable/apps/blender.svg").resolve().read_bytes() != blender_src
+        assert accent.encode() in (tinted / "scalable/apps/org.gnome.TextEditor.svg").resolve().read_bytes()
         assert paletti.recolor_icons([], accent, 0.0) is None
-        assert blender_out.read_bytes() == blender_src  # tint back to 0 restores it
+        assert state["icon-theme"] == out.name  # back to the kept one, unchanged
+        assert (out / "scalable/apps/blender.svg").resolve().read_bytes() == blender_src
         # Only links already broken in the Tela package itself may be broken.
         broken = {p.relative_to(icons / p.relative_to(icons).parts[0]) for p in icons.rglob("*")
                   if p.is_symlink() and not p.exists()}
         assert broken <= broken_in_package, broken - broken_in_package
+    # Recolored files never leak into the shared base through its hard links.
+    base_folder = (icons / "Tela-circle-paletti-base/scalable/places/folder.svg").resolve().read_bytes()
+    assert b"5294e2" in base_folder.lower()
 
 
 def test_wallpaper(tmp):

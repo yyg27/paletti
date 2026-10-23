@@ -137,13 +137,13 @@ paletti looks at the active icon theme and does what fits it:
 
 | Icon theme | What happens |
 | --- | --- |
-| **Tela-circle** (`Tela-circle` or `Tela-circle-dark` selected) | Copied once to `~/.local/share/icons/Tela-circle-paletti(-dark)`. On every switch folders take the exact accent color, GNOME system app icons are fully recolored to the accent, other app icons get a light `icon_tint` toward it. Only `tela-circle-icon-theme-standard` needs to be installed. |
+| **Tela-circle** (`Tela-circle` or `Tela-circle-dark` selected) | Each accent gets its own copy, `~/.local/share/icons/Tela-circle-paletti-<accent>-t<tint>(-dark)`, built on its first switch (~2 s) and reused after, so later switches are instant. About 33 MB each: unchanged icons are hard links into one shared base copy. Folders take the exact accent color, GNOME system app icons are fully recolored to the accent, other app icons get a light `icon_tint` toward it. Only `tela-circle-icon-theme-standard` needs to be installed. |
 | **Papirus** (user-writable copy) | Folder symlinks are pointed at the first `icon_color` Papirus ships. |
 | **Color-variant themes** (`Tela-purple-dark`, `Colloid-Green-Dark`, ...) | Switches to the installed variant of the first `icon_color`. |
 | **Adwaita** | Nothing to do; folders follow the GNOME accent color. |
 
-Everything is regenerated from the original icons on each switch, so colors never
-drift. Themes that name colors differently (for example `Qogir-manjaro` for green)
+Colors are always generated from the original icons, so they never drift. After a
+Tela update, delete `~/.local/share/icons/Tela-circle-paletti-*` to rebuild them. Themes that name colors differently (for example `Qogir-manjaro` for green)
 are left unchanged with a message.
 
 ## Wallpapers
