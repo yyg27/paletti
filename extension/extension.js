@@ -1,8 +1,9 @@
 // Gives paletti GNOME's own screen transition (the dark style toggle crossfade).
 // GNOME keeps org.gnome.Shell.ScreenTransition for itself, so this exports the
-// same effect on the session bus with paletti's timing:
+// same effect on the session bus with paletti's timing, and reloads the shell
+// theme under it:
 //   gdbus call --session --dest org.gnome.Shell --object-path /io/paletti/Transition \
-//       --method io.paletti.Transition.Freeze 350 800
+//       --method io.paletti.Transition.Reload 350 800
 // It also adds a Paletti tile to Quick Settings: click for the next palette,
 // open the menu to pick one. Themes are still applied by the paletti script.
 
@@ -21,14 +22,14 @@ Gio._promisify(Gio.Subprocess.prototype, 'communicate_utf8_async');
 
 const IFACE = `<node>
   <interface name="io.paletti.Transition">
-    <method name="Freeze">
+    <method name="Reload">
       <arg type="u" name="delay" direction="in"/>
       <arg type="u" name="duration" direction="in"/>
     </method>
   </interface>
 </node>`;
 
-// Anything on the session bus can call Freeze; cap it so nobody can hold the screen.
+// Anything on the session bus can call Reload; cap it so nobody can hold the screen.
 const MAX_MS = 3000;
 
 const HOME = GLib.get_home_dir();
@@ -132,7 +133,7 @@ export default class PalettiExtension extends Extension {
 
     // Same as GNOME's ScreenTransition.run(): paint the current screen into an
     // overlay now, let paletti switch underneath, then fade the overlay out.
-    Freeze(delay, duration) {
+    Reload(delay, duration) {
         this._overlay?.remove_all_transitions(); // a still-fading one; onStopped destroys it
 
         const rect = new Mtk.Rectangle({x: 0, y: 0, width: global.screen_width, height: global.screen_height});
@@ -147,6 +148,11 @@ export default class PalettiExtension extends Extension {
         Main.uiGroup.add_child(overlay);
         Main.uiGroup.set_child_above_sibling(overlay, null);
         this._overlay = overlay;
+
+        // Once, here: toggling user-theme's name loads the theme ~6 times, about
+        // 1s with the Shell blocked, so the fade gets no frames. This one load
+        // falls in the delay. user-theme already points at paletti's stylesheet.
+        Main.loadTheme();
 
         overlay.ease({
             opacity: 0,

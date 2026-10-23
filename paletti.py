@@ -278,17 +278,17 @@ def apply(name):
     palette = load(name)
     c = palette["colors"]
 
-    # Freeze the current screen first; without the extension this just fails quietly.
-    sh("gdbus", "call", "--session", "--dest", "org.gnome.Shell", "--object-path", "/io/paletti/Transition",
-       "--method", "io.paletti.Transition.Freeze", *map(str, TRANSITION_MS))
-
-    # Shell: write the CSS, then reload by clearing and resetting user-theme.
+    # Shell: write the CSS, then the extension freezes the screen and reloads the theme.
     THEME_CSS.parent.mkdir(parents=True, exist_ok=True)
     THEME_CSS.write_text(render(palette))
     user_theme = ("user-theme@gnome-shell-extensions.gcampax.github.com",
                   "org.gnome.shell.extensions.user-theme", "name")
-    ext_gset(*user_theme, "")
-    ext_gset(*user_theme, "Islands")
+    ext_gset(*user_theme, "Islands")  # a no-op unless another theme was set
+    reloaded = sh("gdbus", "call", "--session", "--dest", "org.gnome.Shell", "--object-path", "/io/paletti/Transition",
+                  "--method", "io.paletti.Transition.Reload", *map(str, TRANSITION_MS)) == "()"
+    if not reloaded:  # no extension (or not loaded yet): reload by clearing and resetting user-theme
+        ext_gset(*user_theme, "")
+        ext_gset(*user_theme, "Islands")
 
     # Dock: color and running dots. Opacity is left alone, it is tuned by hand.
     dock = ("dash-to-dock@micxgx.gmail.com", "org.gnome.shell.extensions.dash-to-dock")
