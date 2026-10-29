@@ -1,6 +1,7 @@
 """Icon recolor checks on fake icon dirs; gsettings is faked. Run: python3 test_paletti.py"""
 
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -88,6 +89,10 @@ def test_tela(icons):
         assert paletti.recolor_icons([], accent, 0.0) is None
         assert state["icon-theme"] == out.name  # back to the kept one, unchanged
         assert (out / "scalable/apps/blender.svg").resolve().read_bytes() == blender_src
+        assert paletti.recolor_icons([], accent, 0.0, True) is None  # grayscale: every app color a gray
+        grays = re.findall(rb"#([0-9a-f]{6})", (icons / state["icon-theme"] / "scalable/apps/blender.svg").resolve().read_bytes().lower())
+        assert grays and all(g[0:2] == g[2:4] == g[4:6] for g in grays), grays
+        assert paletti.recolor_icons([], accent) is None
         # Only links already broken in the Tela package itself may be broken.
         broken = {p.relative_to(icons / p.relative_to(icons).parts[0]) for p in icons.rglob("*")
                   if p.is_symlink() and not p.exists()}

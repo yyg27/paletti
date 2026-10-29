@@ -3,6 +3,7 @@ description = "Black, white and every gray in between."
 gnome_accent = "slate"
 icon_color = ["grey"]
 icon_tint = 0
+icon_grayscale = true
 wallpaper = "wallpapers/monochrome/monochrome.png"
 
 [colors]

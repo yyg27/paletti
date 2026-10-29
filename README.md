@@ -88,6 +88,7 @@ description = "A green based color scheme, designed to be warm and soft."   # no
 gnome_accent = "green"   # blue teal green yellow orange red pink purple slate
 icon_color = ["green"]   # folder color for Papirus / color-variant icon themes
 icon_tint = 0.2          # app icons move 20% toward the accent (Tela only)
+# icon_grayscale = true  # optional: app icons in grays instead (Tela only, used by Monochrome)
 wallpaper = "wallpapers/everforest/everforest.png"   # optional, relative to the project
 
 [colors]
@@ -138,7 +139,7 @@ paletti looks at the active icon theme and does what fits it:
 
 | Icon theme | What happens |
 | --- | --- |
-| **Tela-circle** (`Tela-circle` or `Tela-circle-dark` selected) | Each accent gets its own copy, `~/.local/share/icons/Tela-circle-paletti-<accent>-t<tint>(-dark)`, built on its first switch (~2 s) and reused after, so later switches are instant. About 33 MB each: unchanged icons are hard links into one shared base copy. Folders take the exact accent color, GNOME system app icons are fully recolored to the accent, other app icons get a light `icon_tint` toward it. Only `tela-circle-icon-theme-standard` needs to be installed. |
+| **Tela-circle** (`Tela-circle` or `Tela-circle-dark` selected) | Each accent gets its own copy, `~/.local/share/icons/Tela-circle-paletti-<accent>-t<tint>(-dark)`, built on its first switch (~2 s) and reused after, so later switches are instant. About 33 MB each: unchanged icons are hard links into one shared base copy. Folders take the exact accent color, GNOME system app icons are fully recolored to the accent, other app icons get a light `icon_tint` toward it, or turn gray with `icon_grayscale` (`-gray` copies). Only `tela-circle-icon-theme-standard` needs to be installed. |
 | **Papirus** (user-writable copy) | Folder symlinks are pointed at the first `icon_color` Papirus ships. |
 | **Color-variant themes** (`Tela-purple-dark`, `Colloid-Green-Dark`, ...) | Switches to the installed variant of the first `icon_color`. |
 | **Adwaita** | Nothing to do; folders follow the GNOME accent color. |

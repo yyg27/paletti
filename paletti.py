@@ -152,8 +152,14 @@ def mix(hex_color, accent, amount):
                    for i in (0, 2, 4))
 
 
-def tela_name(accent, tint):
-    return f"Tela-circle-paletti-{accent[1:].lower()}-t{round(tint * 100)}"
+def gray(hex_color):
+    """hex_color (no #) as the gray of its own brightness, so icon shapes stay readable."""
+    level = round(sum(w * int(hex_color[i:i + 2], 16) for w, i in ((0.299, 0), (0.587, 2), (0.114, 4))))
+    return f"{level:02x}" * 3
+
+
+def tela_name(accent, tint, grayscale=False):
+    return f"Tela-circle-paletti-{accent[1:].lower()}-t{round(tint * 100)}" + ("-gray" if grayscale else "")
 
 
 def copy_tela(src, dst, links_from, copy_function):
@@ -181,7 +187,7 @@ def copy_tela(src, dst, links_from, copy_function):
     return tmp
 
 
-def recolor_tela(accent, tint=0.0):
+def recolor_tela(accent, tint=0.0, grayscale=False):
     """Builds tela_name(accent, tint)(-dark): the installed Tela-circle with its blue
     replaced by the accent and app icons tinted toward it. Each is built once and
     kept, so switching back to a palette only changes the theme name. Files left
@@ -192,7 +198,7 @@ def recolor_tela(accent, tint=0.0):
         src = TELA_SRC / f"Tela-circle{variant}"
         if not src.is_dir():
             return "Tela-circle not found, install tela-circle-icon-theme-standard."
-        dst = ICON_DIRS[0] / f"{tela_name(accent, tint)}{variant}"
+        dst = ICON_DIRS[0] / f"{tela_name(accent, tint, grayscale)}{variant}"
         if dst.exists():
             continue
         base = ICON_DIRS[0] / f"Tela-circle-paletti-base{variant}"
@@ -212,15 +218,15 @@ def recolor_tela(accent, tint=0.0):
                 data = source.read_bytes()
                 if TELA_BLUE.search(data):
                     put(source.relative_to(src), TELA_BLUE.sub(accent.encode(), data))
-        # App icons: a light tint toward the accent.
+        # App icons: a light tint toward the accent, or every color as its own gray.
         apps = src / "scalable/apps"
-        if tint and apps.is_dir() and apps.resolve().is_relative_to(src.resolve()):  # -dark links it to the base
+        if (tint or grayscale) and apps.is_dir() and apps.resolve().is_relative_to(src.resolve()):  # -dark links it to the base
+            recolor = (lambda h: gray(h)) if grayscale else (lambda h: mix(h, accent, tint))
             for source in apps.glob("*.svg"):
                 if source.is_symlink():
                     continue
                 data = TELA_BLUE.sub(accent.encode(), source.read_bytes())
-                put(source.relative_to(src),
-                    HEX.sub(lambda m: b"#" + mix(m.group(1).decode().lower(), accent, tint).encode(), data))
+                put(source.relative_to(src), HEX.sub(lambda m: b"#" + recolor(m.group(1).decode().lower()).encode(), data))
         # System app icons: recolor the real file, so every alias name links to it.
         for app in SYSTEM_APPS:
             icon = src / "scalable/apps" / f"{app}.svg"
@@ -233,7 +239,7 @@ def recolor_tela(accent, tint=0.0):
     return None
 
 
-def recolor_icons(colors, accent, tint=0.0):
+def recolor_icons(colors, accent, tint=0.0, grayscale=False):
     """Recolors the active icon theme; returns a message when that is not possible."""
     theme = sh("gsettings", "get", "org.gnome.desktop.interface", "icon-theme").strip("'")
     if theme == "Adwaita" and ICON_THEME_SWAP.exists():  # an earlier job was stopped mid-swap
@@ -241,8 +247,8 @@ def recolor_icons(colors, accent, tint=0.0):
     if theme.lower().startswith("adwaita"):
         return None  # Adwaita folders already follow the GNOME accent color.
     if theme in ("Tela-circle", "Tela-circle-dark") or theme.startswith("Tela-circle-paletti"):
-        message = recolor_tela(accent, tint)
-        new = tela_name(accent, tint) + ("-dark" if theme.endswith("dark") else "")
+        message = recolor_tela(accent, tint, grayscale)
+        new = tela_name(accent, tint, grayscale) + ("-dark" if theme.endswith("dark") else "")
         if message is None and new != theme:
             # A new name reloads icons by itself, no Adwaita swap needed.
             sh("gsettings", "set", "org.gnome.desktop.interface", "icon-theme", new)
@@ -411,7 +417,8 @@ def apply_icons(name):
     palette = load(name)
     # Icons follow the accent unless the palette gives them their own color.
     c = palette["colors"]
-    message = recolor_icons(palette["icon_color"], c.get("icons", c["accent"]), palette.get("icon_tint", 0.0))
+    message = recolor_icons(palette["icon_color"], c.get("icons", c["accent"]), palette.get("icon_tint", 0.0),
+                            palette.get("icon_grayscale", False))
     if message:
         print(message, file=sys.stderr)
     # Last, so it shows up once everything, icons included, has switched. This job
