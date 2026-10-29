@@ -17,6 +17,7 @@ dock, GTK apps, GNOME Terminal, the accent color and the icons. Press
 | [Everforest](https://github.com/sainnhe/everforest) (dark, medium) | `#2d353b` | `#d3c6aa` | `#a7c080` | `#83c092` | green |
 | [Gruvbox](https://github.com/morhetz/gruvbox) (dark) | `#282828` | `#ebdbb2` | `#fabd2f` | `#fe8019` | yellow |
 | [Kanagawa](https://github.com/rebelot/kanagawa.nvim) (wave) | `#1f1f28` | `#dcd7ba` | `#7e9cd8` | `#d27e99` | blue |
+| Monochrome | `#111111` | `#e6e6e6` | `#e6e6e6` | `#9e9e9e` | slate |
 | [Nord](https://www.nordtheme.com) | `#2e3440` | `#eceff4` | `#88c0d0` | `#81a1c1` | blue |
 | Redemption | `#141110` | `#e8dcc2` | `#d9181f` | `#f0882a` | red |
 | [Tokyo Night](https://github.com/folke/tokyonight.nvim) (night) | `#1a1b26` | `#c0caf5` | `#7aa2f7` | `#bb9af7` | blue |
