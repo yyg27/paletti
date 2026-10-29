@@ -3,6 +3,7 @@ description = "Unit-01 purple and green, straight from the entry plug."
 gnome_accent = "green"
 icon_color = ["green"]
 icon_tint = 0.2
+wallpaper = "wallpapers/evangelion/evangelion.jpg"
 
 [colors]
 bg            = "#12091e"

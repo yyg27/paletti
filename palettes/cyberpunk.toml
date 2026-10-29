@@ -3,6 +3,7 @@ description = "Neon yellow, cyan and violet on a midnight purple city."
 gnome_accent = "red"
 icon_color = ["yellow"]
 icon_tint = 0.2
+wallpaper = "wallpapers/cyberpunk/cyberpunk.jpg"
 
 [colors]
 bg            = "#0d0221"
