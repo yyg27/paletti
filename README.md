@@ -40,6 +40,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | VS Code (and VSCodium) | Switches `workbench.colorTheme` in `settings.json` to the palette's `vscode_theme`, a ready-made theme from the Marketplace (install its extension once, see below). A palette without one gets `Default Dark Modern` with interface, terminal and syntax colors from `vscode.json` on top. Other settings and your own colors and token rules stay; the original is kept once as `settings.json.before-paletti`. A `settings.json` with comments is left alone |
 | Icons | See [Icons](#icons) |
 | Wallpaper and lock screen | See [Wallpapers](#wallpapers) |
+| Login screen (GDM), optional | See [Login screen](#login-screen-gdm) |
 
 ### VS Code themes
 
@@ -196,6 +197,30 @@ everforest = ["~/.config/background", "~/Pictures/forest.jpg"]
 <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> cycles the palette's default and
 your own wallpapers and switches the mode to `chosen`. `paletti --wallpaper`
 rewrites the config file, so comments added by hand are not kept.
+
+## Login screen (GDM)
+
+The login screen can follow the palette too: its wallpaper (blurred and darkened
+toward the palette background), Islands top bar, user list, password field and
+buttons. It needs root once:
+
+```sh
+sudo ~/.local/bin/paletti --gdm-setup
+```
+
+That appends `gdm.css` to GNOME's theme resource
+(`/usr/share/gnome-shell/gnome-shell-theme.gresource`, the original kept in
+`/var/lib/paletti`), with selectors only the login screen uses, so sessions and
+their lock screen look as before. A systemd path unit redoes it on every palette
+switch without a password, and a pacman hook after GNOME updates. The root
+service runs a root-owned copy of paletti in `/usr/local/share/paletti` and takes
+only the palette name from your state file, so nothing in your own checkout ever
+runs as root. The price: after changing palettes or their wallpapers, run
+`--gdm-setup` again. Your own extra wallpapers are not used on the login screen.
+
+Undo everything with `sudo ~/.local/bin/paletti --gdm-remove`. If the login screen
+ever breaks, run that from a text console (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F3</kbd>),
+or `sudo pacman -S gnome-shell` restores GNOME's file.
 
 ## Backups
 

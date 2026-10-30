@@ -11,6 +11,10 @@
         default: the palette's wallpaper, chosen: the last one picked with
         --next-wallpaper, keep: never touch the wallpaper.
         Own wallpapers go under [wallpapers] in ~/.config/paletti/config.toml.
+
+    sudo paletti --gdm-setup    the GDM login screen follows the palette from now on;
+                                run again after changing palettes or their wallpapers
+    sudo paletti --gdm-remove   GDM back to GNOME's own theme
 """
 
 import ast
@@ -19,15 +23,18 @@ import configparser
 import fcntl
 import json
 import os
+import pwd
 import re
 import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import tomllib
 from pathlib import Path
 from string import Template
+from xml.sax.saxutils import escape
 
 HERE = Path(__file__).resolve().parent
 PALETTES = HERE / "palettes"
@@ -41,6 +48,15 @@ ICON_THEME_SWAP = HOME / ".local/state/paletti/icon-theme"  # exists only mid se
 CONFIG = HOME / ".config/paletti/config.toml"
 CHOSEN_WALLPAPER = HOME / ".local/state/paletti/wallpaper"  # one file per palette
 WALLPAPER_MODES = ("default", "chosen", "keep")
+
+# GDM: GNOME's theme resource gets gdm.css appended, by a root service that only
+# uses a root-owned copy of paletti, so the user's own files are never run as root.
+GDM_GRESOURCE = Path("/usr/share/gnome-shell/gnome-shell-theme.gresource")
+GDM_ORIGINAL = Path("/var/lib/paletti/gnome-shell-theme.gresource")  # as GNOME shipped it
+GDM_HOME = Path("/usr/local/share/paletti")
+GDM_UNITS = Path("/etc/systemd/system")
+GDM_HOOK = Path("/etc/pacman.d/hooks/paletti-gdm.hook")
+GDM_MARKER = b"paletti-gdm"
 
 GTK_CSS = {"gtk4.css": HOME / ".config/gtk-4.0/gtk.css",
            "gtk3.css": HOME / ".config/gtk-3.0/gtk.css"}
@@ -695,6 +711,171 @@ def install_vscode_themes():
             print(out.splitlines()[-1] if "successfully" in out else f"{cli}: could not install {extension}")
 
 
+def gdm_patched(path):
+    from gi.repository import Gio
+    css = Gio.Resource.load(str(path)).lookup_data("/org/gnome/shell/theme/gnome-shell-dark.css", 0)
+    return GDM_MARKER in css.get_data()
+
+
+def save_gdm_original():
+    """Keeps GNOME's theme resource as shipped: the base every palette is applied to."""
+    if not gdm_patched(GDM_GRESOURCE):
+        GDM_ORIGINAL.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(GDM_GRESOURCE, GDM_ORIGINAL)
+
+
+def read_palette_name(path):
+    """The palette name in the user's state file, read as root: no following a link,
+    no blocking, at most 100 bytes, and anything but a known palette is ignored."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        try:
+            name = os.read(fd, 100).decode(errors="replace").strip()
+        finally:
+            os.close(fd)
+    except OSError:
+        return None
+    return name if name in names() else None
+
+
+def build_gdm_gresource(original, palette, out):
+    """out: GNOME's theme resource with gdm.css appended to its stylesheets and the
+    palette's wallpaper, blurred, as the login background."""
+    import gi
+    gi.require_version("GdkPixbuf", "2.0")
+    from gi.repository import GdkPixbuf, Gio
+    prefix = "/org/gnome/shell/theme/"
+    resource = Gio.Resource.load(str(original))
+    css = render(palette, "gdm.css").encode()
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp, files = Path(tmp), []
+
+        def copy(path):
+            for child in resource.enumerate_children(prefix + path, 0):
+                if child.endswith("/"):
+                    copy(path + child)
+                    continue
+                data = resource.lookup_data(prefix + path + child, 0).get_data()
+                if child.startswith("gnome-shell") and child.endswith(".css") and "high-contrast" not in child:
+                    data += css
+                (tmp / path).mkdir(parents=True, exist_ok=True)
+                (tmp / path / child).write_bytes(data)
+                files.append(path + child)
+        copy("")
+
+        wallpaper = (HERE / palette.get("wallpaper", "-")).resolve()
+        if wallpaper.is_file() and wallpaper.is_relative_to((HERE / "wallpapers").resolve()):
+            bilinear = GdkPixbuf.InterpType.BILINEAR
+            image = GdkPixbuf.Pixbuf.new_from_file(str(wallpaper))
+            width = 1920
+            height = max(32, round(image.get_height() * width / image.get_width()))
+            # A cheap blur without an image library: shrink, then grow back in doubling
+            # steps (one big step comes out blocky).
+            image = image.scale_simple(width // 32, height // 32, bilinear)
+            while image.get_width() < width:
+                step = min(width, image.get_width() * 2)
+                image = image.scale_simple(step, round(height * step / width), bilinear)
+            # Darkened toward the palette background, so the login text stays readable.
+            background = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, width, height)
+            background.fill(int(palette["colors"]["bg"][1:] + "ff", 16))
+            image.composite(background, 0, 0, width, height, 0, 0, 1, 1, bilinear, 140)
+            background.savev(str(tmp / "paletti-gdm.png"), "png", [], [])
+            files.append("paletti-gdm.png")
+
+        (tmp / "theme.xml").write_text('<?xml version="1.0"?><gresources><gresource prefix="/org/gnome/shell/theme">'
+                                       + "".join(f"<file>{escape(f)}</file>" for f in files)
+                                       + "</gresource></gresources>")
+        subprocess.run(["glib-compile-resources", "--sourcedir", str(tmp), "--target", str(out),
+                        str(tmp / "theme.xml")], check=True)
+    # Checked before GDM ever loads it: a broken file would leave the login screen without a theme.
+    if not gdm_patched(out):
+        raise RuntimeError(f"{out} came out without the palette's stylesheet")
+
+
+def apply_gdm(palette):
+    """Runs as root: swaps in GNOME's theme resource with the palette's login screen."""
+    tmp = GDM_GRESOURCE.with_name(".paletti-gdm.gresource")
+    try:
+        build_gdm_gresource(GDM_ORIGINAL, palette, tmp)
+        tmp.chmod(0o644)
+        os.replace(tmp, GDM_GRESOURCE)  # atomic: running shells keep the file they mapped
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def gdm_setup():
+    if os.geteuid() != 0 or os.environ.get("SUDO_USER", "root") == "root":
+        sys.exit("Run it with sudo from your own account: sudo ~/.local/bin/paletti --gdm-setup")
+    state = Path(pwd.getpwnam(os.environ["SUDO_USER"]).pw_dir) / ".local/state/paletti/current"
+    if not GDM_ORIGINAL.exists() and gdm_patched(GDM_GRESOURCE):
+        sys.exit(f"{GDM_GRESOURCE} is patched and its original is gone; reinstall gnome-shell first.")
+    save_gdm_original()
+
+    # The root copy: the service and hook run and read only this, never the user's checkout.
+    shutil.rmtree(GDM_HOME, ignore_errors=True)
+    GDM_HOME.mkdir(parents=True)
+    for name in ["paletti.py", "gdm.css"]:
+        shutil.copy2(HERE / name, GDM_HOME / name)
+    for name in ["palettes", "wallpapers"]:
+        shutil.copytree(HERE / name, GDM_HOME / name, symlinks=True)  # links out are refused at apply
+
+    run = f"/usr/bin/python3 -I {GDM_HOME / 'paletti.py'}"
+    (GDM_UNITS / "paletti-gdm.path").write_text(f"""[Unit]
+Description=Update the GDM login screen when paletti switches palettes
+
+[Path]
+PathChanged={state}
+
+[Install]
+WantedBy=multi-user.target
+""")
+    (GDM_UNITS / "paletti-gdm.service").write_text(f"""[Unit]
+Description=Apply the current paletti palette to the GDM login screen
+
+[Service]
+Type=oneshot
+ExecStart={run} --gdm-apply {state}
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=read-only
+ProtectSystem=strict
+ReadWritePaths={GDM_GRESOURCE.parent}
+""")
+    GDM_HOOK.parent.mkdir(parents=True, exist_ok=True)
+    GDM_HOOK.write_text(f"""[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Target = {str(GDM_GRESOURCE).lstrip("/")}
+
+[Action]
+Description = Applying the paletti palette to the GDM login screen...
+When = PostTransaction
+Exec = {run} --gdm-refresh {state}
+""")
+    subprocess.run(["systemctl", "daemon-reload"], check=True)
+    subprocess.run(["systemctl", "enable", "--now", "paletti-gdm.path"], check=True)
+    subprocess.run(["systemctl", "start", "paletti-gdm.service"], check=True)
+    print("GDM now follows the palette; it shows on the next login screen.\n"
+          "After changing palettes or their wallpapers, run this again. Undo: sudo ~/.local/bin/paletti --gdm-remove")
+
+
+def gdm_remove():
+    if os.geteuid() != 0:
+        sys.exit("Run it with sudo: sudo ~/.local/bin/paletti --gdm-remove")
+    subprocess.run(["systemctl", "disable", "--now", "paletti-gdm.path"])
+    for path in [GDM_UNITS / "paletti-gdm.path", GDM_UNITS / "paletti-gdm.service", GDM_HOOK]:
+        path.unlink(missing_ok=True)
+    subprocess.run(["systemctl", "daemon-reload"])
+    if GDM_ORIGINAL.exists():
+        tmp = GDM_GRESOURCE.with_name(".paletti-gdm.gresource")
+        shutil.copy2(GDM_ORIGINAL, tmp)
+        os.replace(tmp, GDM_GRESOURCE)
+    shutil.rmtree(GDM_HOME, ignore_errors=True)
+    shutil.rmtree(GDM_ORIGINAL.parent, ignore_errors=True)
+    print("GDM is back to GNOME's own theme.")
+
+
 def main(args):
     if args == ["--list"]:
         print("\n".join(names()))
@@ -704,6 +885,16 @@ def main(args):
         install()
     elif len(args) == 2 and args[0] == "--icons" and args[1] in names():  # internal, see start_icons
         apply_icons(args[1])
+    elif args == ["--gdm-setup"]:
+        gdm_setup()
+    elif args == ["--gdm-remove"]:
+        gdm_remove()
+    elif len(args) == 2 and args[0] in ("--gdm-apply", "--gdm-refresh"):  # internal: the root service and hook
+        if args[0] == "--gdm-refresh":
+            save_gdm_original()
+        name = read_palette_name(Path(args[1]))
+        if name:
+            apply_gdm(load(name))
     elif args == ["--next-wallpaper"]:
         next_wallpaper()
     elif len(args) == 2 and args[0] == "--wallpaper" and args[1] in WALLPAPER_MODES:

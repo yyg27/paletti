@@ -1,0 +1,51 @@
+
+/* paletti-gdm ($name). Appended to GNOME's own theme by paletti --gdm-apply; only
+   login screen selectors, so user sessions and their lock screen look as before. */
+#lockDialogGroup {
+  background-color: $bg;
+  background-image: url("resource:///org/gnome/shell/theme/paletti-gdm.png");
+  background-size: cover;
+  background-position: center; }
+
+#panel.login-screen { background-color: transparent; }
+#panel.login-screen #panelCenter,
+#panel.login-screen #panelRight {
+  background-color: rgba($bg_rgb, 0.92);
+  border: 1px solid rgba($accent_rgb, 0.35);
+  border-radius: 99px;
+  margin: 4px 6px;
+  padding: 0 6px; }
+#panel.login-screen .panel-button,
+#panel.login-screen .panel-button .clock { color: $fg; }
+
+.login-dialog .login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item,
+.login-dialog .login-dialog-not-listed-button,
+.login-dialog .login-dialog-button {
+  color: $fg;
+  background-color: rgba($card_rgb, 0.92); }
+.login-dialog .login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:hover,
+.login-dialog .login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:focus,
+.login-dialog .login-dialog-not-listed-button:hover,
+.login-dialog .login-dialog-button:hover {
+  background-color: $card_hover; }
+.login-dialog .login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:focus,
+.login-dialog .login-dialog-button:focus {
+  box-shadow: inset 0 0 0 2px $accent !important; }
+.login-dialog .login-dialog-button.default,
+.login-dialog .login-dialog-button.next-button:hover {
+  color: $on_accent;
+  background-color: $accent; }
+
+.login-dialog .login-dialog-prompt-entry {
+  color: $fg;
+  background-color: rgba($card_rgb, 0.92);
+  selection-background-color: rgba($accent_rgb, 0.4); }
+.login-dialog .login-dialog-prompt-entry:focus {
+  color: $fg;
+  background-color: $card;
+  box-shadow: inset 0 0 0 2px $accent !important; }
+.login-dialog .login-dialog-prompt-entry StLabel.hint-text { color: $muted; }
+
+.login-dialog .user-widget-label,
+.login-dialog .login-dialog-message,
+.login-dialog .login-dialog-not-listed-label { color: $fg; }

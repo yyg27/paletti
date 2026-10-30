@@ -267,6 +267,36 @@ def test_swatches(tmp):
         paletti.PALETTES = paletti.HERE / "palettes"
 
 
+def test_gdm(tmp):
+    """The login screen theme builds from GNOME's own resource and loads; the root
+    service accepts only a known palette name from the user's state file."""
+    from gi.repository import Gio
+    for name in paletti.names():
+        assert "$" not in paletti.render(paletti.load(name), "gdm.css")
+    if not paletti.GDM_GRESOURCE.exists():
+        print("skip test_gdm build: no", paletti.GDM_GRESOURCE)
+    else:
+        nord, out = paletti.load("nord"), tmp / "theme.gresource"
+        paletti.build_gdm_gresource(paletti.GDM_GRESOURCE, nord, out)
+        built, shipped = Gio.Resource.load(str(out)), Gio.Resource.load(str(paletti.GDM_GRESOURCE))
+        theme = "/org/gnome/shell/theme/"
+        assert set(built.enumerate_children(theme, 0)) == set(shipped.enumerate_children(theme, 0)) | {"paletti-gdm.png"}
+        css = built.lookup_data(theme + "gnome-shell-dark.css", 0).get_data()
+        assert css.startswith(shipped.lookup_data(theme + "gnome-shell-dark.css", 0).get_data())
+        assert paletti.gdm_patched(out) and nord["colors"]["bg"].encode() in css
+        assert paletti.GDM_MARKER not in built.lookup_data(theme + "gnome-shell-high-contrast.css", 0).get_data()
+
+    state = tmp / "current"
+    for content, expected in [("nord\n", "nord"), ("../../etc/shadow", None), ("x" * 5000, None)]:
+        state.write_text(content)
+        assert paletti.read_palette_name(state) == expected
+    state.unlink()
+    assert paletti.read_palette_name(state) is None
+    (tmp / "elsewhere").write_text("nord")
+    state.symlink_to(tmp / "elsewhere")
+    assert paletti.read_palette_name(state) is None  # a link is never followed as root
+
+
 def test_install_vscode_themes():
     """Only missing theme extensions are installed, and only for a VS Code that exists."""
     calls = []
@@ -309,7 +339,7 @@ def test_adwaita():
 
 if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
-                 test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup, test_swatches,
+                 test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup, test_swatches, test_gdm,
                  test_vscode]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
