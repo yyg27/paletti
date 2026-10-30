@@ -2,6 +2,7 @@ name = "Evangelion"
 description = "Unit-01 purple and green, straight from the entry plug."
 gnome_accent = "green"
 vscode_theme = "EVA Unit-01 Berserk"
+vscode_extension = "engr.neon-genesis-evangelion-themes"
 icon_color = ["green"]
 icon_tint = 0.2
 wallpaper = "wallpapers/evangelion/evangelion.jpg"

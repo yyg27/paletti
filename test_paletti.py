@@ -255,6 +255,26 @@ def test_vscode(tmp):
     assert (codium / "settings.json").read_text() == jsonc
 
 
+def test_install_vscode_themes():
+    """Only missing theme extensions are installed, and only for a VS Code that exists."""
+    calls = []
+
+    def sh(*cmd):
+        calls.append(cmd)
+        return "Dracula-Theme.Theme-Dracula\n" if cmd[1] == "--list-extensions" else "was successfully installed"
+    paletti.sh = sh
+    which = paletti.shutil.which
+    paletti.shutil.which = lambda cli: cli == "code"
+    try:
+        paletti.install_vscode_themes()
+    finally:
+        paletti.shutil.which = which
+    installed = {cmd[2] for cmd in calls if cmd[1] == "--install-extension"}
+    wanted = {paletti.load(n).get("vscode_extension") for n in paletti.names()} - {None}
+    assert installed == wanted - {"dracula-theme.theme-dracula"} and len(installed) == 9
+    assert all(cmd[0] == "code" for cmd in calls)
+
+
 def test_broken_config(tmp):
     paletti.sh = lambda *cmd: ""
     paletti.CONFIG = tmp / "config.toml"
@@ -286,5 +306,6 @@ if __name__ == "__main__":
             paletti.ICON_THEME_SWAP = Path(tmp) / "icon-theme"
             test(Path(tmp))
     test_adwaita()
+    test_install_vscode_themes()
     test_window_buttons()
     print("ok")

@@ -669,6 +669,19 @@ def install():
         sh("gsettings", "set", item, "binding", binding)
     print(f"Installed: {link}, shortcuts Super+Y (theme) and Super+Shift+Y (wallpaper)")
     print(f"Extension {EXTENSION_UUID} enabled; log out and back in once for the screen transition.")
+    install_vscode_themes()
+
+
+def install_vscode_themes():
+    """The Marketplace themes palettes switch VS Code to, for each VS Code found."""
+    wanted = {load(name).get("vscode_extension") for name in names()} - {None}
+    for cli in ["code", "codium"]:
+        if not shutil.which(cli):
+            continue
+        have = set(sh(cli, "--list-extensions").lower().split())
+        for extension in sorted(wanted - have):
+            out = sh(cli, "--install-extension", extension)
+            print(out.splitlines()[-1] if "successfully" in out else f"{cli}: could not install {extension}")
 
 
 def main(args):

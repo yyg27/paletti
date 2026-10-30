@@ -2,6 +2,7 @@ name = "Gruvbox"
 description = "A retro groove color scheme with warm, earthy tones."
 gnome_accent = "yellow"
 vscode_theme = "Gruvbox Dark Medium"
+vscode_extension = "jdinhlife.gruvbox"
 icon_color = ["yellow"]
 icon_tint = 0.2
 wallpaper = "wallpapers/gruvbox/gruvbox.png"

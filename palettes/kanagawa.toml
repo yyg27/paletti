@@ -2,6 +2,7 @@ name = "Kanagawa"
 description = "A dark theme inspired by the colors of Hokusai's Great Wave off Kanagawa."
 gnome_accent = "blue"
 vscode_theme = "Kanagawa"
+vscode_extension = "qufiwefefwoyn.kanagawa"
 icon_color = ["blue"]
 icon_tint = 0.2
 wallpaper = "wallpapers/kanagawa/kanagawa.jpg"

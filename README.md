@@ -57,8 +57,8 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | Tokyo Night | Tokyo Night | `enkia.tokyo-night` |
 | Redemption | none, paletti's own colors | |
 
-Install them once with `code --install-extension <extension>`. A missing one makes
-VS Code fall back to its default theme.
+`paletti --install` installs the missing ones for `code` and `codium`. A missing one
+makes VS Code fall back to its default theme.
 
 ## Requirements
 
@@ -77,7 +77,7 @@ git clone <repo> ~/Projects/paletti
 `--install` links `~/.local/bin/paletti` to the script and adds two custom
 shortcuts: <kbd>Super</kbd>+<kbd>Y</kbd> (next palette) and
 <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> (next wallpaper). Existing
-shortcuts are kept.
+shortcuts are kept. With VS Code installed it also installs the palettes' VS Code themes.
 
 ## Usage
 
@@ -107,6 +107,7 @@ name = "Everforest"
 description = "A green based color scheme, designed to be warm and soft."   # notification text
 gnome_accent = "green"   # blue teal green yellow orange red pink purple slate
 vscode_theme = "Everforest Dark"   # optional: a VS Code color theme, by its name in the theme picker
+vscode_extension = "sainnhe.everforest"   # the Marketplace extension with it, installed by --install
 icon_color = ["green"]   # folder color for Papirus / color-variant icon themes
 icon_tint = 0.2          # app icons move 20% toward the accent (Tela only)
 # icon_grayscale = true  # optional: app icons in grays instead (Tela only, used by Monochrome)
