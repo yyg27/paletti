@@ -1,5 +1,6 @@
 """Icon recolor checks on fake icon dirs; gsettings is faked. Run: python3 test_paletti.py"""
 
+import json
 import os
 import re
 import tempfile
@@ -217,6 +218,28 @@ def test_firefox(tmp):
     assert not (root / "old.default/chrome").exists()  # not the profile Firefox starts with
 
 
+def test_vscode(tmp):
+    """Palette colors merge into settings.json; the user's settings stay, a JSONC file is left alone."""
+    paletti.sh = lambda *cmd: ""
+    code, codium = tmp / "Code/User", tmp / "VSCodium/User"
+    code.mkdir(parents=True)
+    codium.mkdir(parents=True)
+    paletti.VSCODE_DIRS = [code, codium]
+    settings = code / "settings.json"
+    settings.write_text('{"editor.fontSize": 14, "workbench.colorCustomizations": {"minimap.background": "#000000"}}')
+    jsonc = '{\n    // mine\n    "editor.fontSize": 14,\n}'
+    (codium / "settings.json").write_text(jsonc)
+    for name in ["dracula", "nord"]:
+        paletti.apply_vscode(paletti.load(name))
+    result = json.loads(settings.read_text())
+    colors = result["workbench.colorCustomizations"]
+    assert result["editor.fontSize"] == 14 and colors["minimap.background"] == "#000000"
+    assert colors["editor.background"] == "#2e3440" and colors["terminal.ansiBrightWhite"] == "#ECEFF4"
+    assert not any("$" in v for v in colors.values())
+    assert json.loads((code / "settings.json.before-paletti").read_text())["editor.fontSize"] == 14
+    assert (codium / "settings.json").read_text() == jsonc
+
+
 def test_broken_config(tmp):
     paletti.sh = lambda *cmd: ""
     paletti.CONFIG = tmp / "config.toml"
@@ -239,10 +262,12 @@ def test_adwaita():
 
 if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
-                 test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup]:
+                 test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup,
+                 test_vscode]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
             paletti.FIREFOX_DIRS = [Path(tmp) / "firefox"]  # apply never touches the real profile
+            paletti.VSCODE_DIRS = [Path(tmp) / "vscode"]  # nor the real VS Code settings
             paletti.ICON_THEME_SWAP = Path(tmp) / "icon-theme"
             test(Path(tmp))
     test_adwaita()

@@ -45,6 +45,8 @@ WALLPAPER_MODES = ("default", "chosen", "keep")
 GTK_CSS = {"gtk4.css": HOME / ".config/gtk-4.0/gtk.css",
            "gtk3.css": HOME / ".config/gtk-3.0/gtk.css"}
 FIREFOX_DIRS = [HOME / ".config/mozilla/firefox", HOME / ".mozilla/firefox"]  # newer and older location
+VSCODE_DIRS = [HOME / ".config/Code/User", HOME / ".config/VSCodium/User", HOME / ".config/Code - OSS/User"]
+ANSI = ["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White"]
 
 ROLES = ["bg", "bg_alt", "fg", "surface", "surface_hover", "card", "card_alt", "card_hover",
          "accent", "accent_hover", "accent2", "heading", "muted"]
@@ -359,6 +361,7 @@ def apply(name):
             with user_js.open("a") as f:  # appended, the user's own prefs stay
                 f.write(pref + "\n")
 
+    apply_vscode(palette)
     apply_wallpaper(name, palette)
 
     # GNOME Terminal default profile.
@@ -384,6 +387,33 @@ def apply(name):
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(name)
     start_icons(name)
+
+
+def apply_vscode(palette):
+    """Merges the palette into VS Code's settings.json, which VS Code reloads by itself.
+    The user's other settings and color keys stay; the original is backed up once."""
+    colors = json.loads(render(palette, "vscode.json"))
+    names = [f"terminal.ansi{n}" for n in ANSI] + [f"terminal.ansiBright{n}" for n in ANSI]
+    colors.update(zip(names, palette["terminal"]["palette"]))
+    for folder in VSCODE_DIRS:
+        target = folder / "settings.json"
+        if not target.exists():
+            continue
+        try:
+            settings = json.loads(target.read_text() or "{}")
+        except json.JSONDecodeError:
+            settings = None
+        if not isinstance(settings, dict):
+            # shortcut: comments or trailing commas would be lost on a rewrite, so such a file is left alone; parse JSONC once someone has one.
+            print(f"{target} is not plain JSON (comments?), VS Code colors unchanged.", file=sys.stderr)
+            continue
+        backup = target.with_name("settings.json.before-paletti")
+        if not backup.exists():
+            shutil.copy2(target, backup)
+        settings["workbench.colorCustomizations"] = {**settings.get("workbench.colorCustomizations", {}), **colors}
+        tmp = target.with_name(".settings.json.paletti")
+        tmp.write_text(json.dumps(settings, indent=4) + "\n")
+        os.replace(tmp, target)  # VS Code watches the file; it never sees half of it
 
 
 def write_generated(target, text):

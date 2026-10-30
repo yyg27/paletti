@@ -37,6 +37,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | Blur my Shell | Top bar, menu and dock blur turned off; their shapes show around paletti's |
 | Window buttons (GTK apps) | Small circles: close in the palette's red, minimize and maximize in its own accent colors |
 | Window buttons (Firefox) | The same circles through `chrome/userChrome.css` in the default profile, from `firefox.css`; `user.js` turns on `toolkit.legacyUserProfileCustomizations.stylesheets`. Firefox picks them up on its next start |
+| VS Code (and VSCodium) | Editor, side bar, tabs, status bar and terminal colors merged into `workbench.colorCustomizations` in `settings.json`, from `vscode.json`; other settings stay, the original is kept once as `settings.json.before-paletti`. Syntax colors stay the color theme's. A `settings.json` with comments is left alone |
 | Icons | See [Icons](#icons) |
 | Wallpaper and lock screen | See [Wallpapers](#wallpapers) |
 
@@ -44,7 +45,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 
 - GNOME Shell (built and tested on GNOME 51) with the **User Themes** extension
 - Python 3.11+ (standard library only)
-- Optional: Dash to Dock, GNOME Terminal, Firefox, `adw-gtk3`, Tela-circle or Papirus icons.
+- Optional: Dash to Dock, GNOME Terminal, Firefox, VS Code, `adw-gtk3`, Tela-circle or Papirus icons.
   Anything missing is skipped.
 
 ## Install
