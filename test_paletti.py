@@ -119,6 +119,28 @@ def test_wallpaper(tmp):
     assert paletti.pick_wallpaper([], "default", None) is None
 
 
+def test_tela_cleanup(icons):
+    """Themes of an old accent go after a switch; a Tela update rebuilds the rest."""
+    src = icons / "src"
+    for variant in ["", "-dark"]:
+        (src / f"Tela-circle{variant}/scalable/places").mkdir(parents=True)
+        (src / f"Tela-circle{variant}/index.theme").write_text("[Icon Theme]\nName=Tela circle\n")
+        (src / f"Tela-circle{variant}/scalable/places/folder.svg").write_text('<svg fill="#5294e2"/>')
+    paletti.TELA_SRC = src
+    args = paletti.icon_args(paletti.load(paletti.names()[0]))
+    used = icons / paletti.tela_name(*args)
+    assert paletti.recolor_tela(*args) is None
+    stale = icons / "Tela-circle-paletti-123456-t20-dark"
+    stale.mkdir()
+    paletti.prune_tela()
+    assert not stale.exists() and used.is_dir() and (icons / "Tela-circle-paletti-base").is_dir()
+    (used / "marker").write_text("")
+    os.utime(src / "Tela-circle/index.theme", ns=(1, 1))  # what a package update does
+    assert paletti.recolor_tela(*args) is None
+    assert used.is_dir() and not (used / "marker").exists()
+    assert (icons / "Tela-circle-paletti-base/paletti-source").read_text() == "1"
+
+
 def test_interrupted_swap(icons):
     """A job stopped during set_icon_theme leaves Adwaita set; the next one restores it."""
     (icons / "Tela-purple-dark").mkdir()
@@ -217,7 +239,7 @@ def test_adwaita():
 
 if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
-                 test_broken_palette, test_broken_config, test_gtk_backup, test_firefox]:
+                 test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
             paletti.FIREFOX_DIRS = [Path(tmp) / "firefox"]  # apply never touches the real profile

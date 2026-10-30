@@ -192,8 +192,15 @@ def recolor_tela(accent, tint=0.0, grayscale=False):
     replaced by the accent and app icons tinted toward it. Each is built once and
     kept, so switching back to a palette only changes the theme name. Files left
     as they are hard links into one shared base copy, so each costs ~8 MB."""
-    # shortcut: built themes are never rebuilt or deleted, so a Tela update or an
-    # old accent leaves stale ones; clear ~/.local/share/icons/Tela-circle-paletti-* then.
+    if not (TELA_SRC / "Tela-circle").is_dir():
+        return "Tela-circle not found, install tela-circle-icon-theme-standard."
+    # Built themes are copies of the installed Tela. A package update gives index.theme
+    # a new mtime; then they all go and are rebuilt as palettes are used.
+    stamp = ICON_DIRS[0] / "Tela-circle-paletti-base/paletti-source"
+    source = str((TELA_SRC / "Tela-circle/index.theme").stat().st_mtime_ns)
+    if not (stamp.exists() and stamp.read_text() == source):
+        for path in ICON_DIRS[0].glob("Tela-circle-paletti-*"):
+            shutil.rmtree(path)
     for variant in ["", "-dark"]:
         src = TELA_SRC / f"Tela-circle{variant}"
         if not src.is_dir():
@@ -203,7 +210,10 @@ def recolor_tela(accent, tint=0.0, grayscale=False):
             continue
         base = ICON_DIRS[0] / f"Tela-circle-paletti-base{variant}"
         if not base.exists():
-            copy_tela(src, base, "Tela-circle", shutil.copy2).rename(base)
+            tmp = copy_tela(src, base, "Tela-circle", shutil.copy2)
+            if not variant:
+                (tmp / "paletti-source").write_text(source)
+            tmp.rename(base)
         tmp = copy_tela(base, dst, "Tela-circle-paletti-base", os.link)
 
         def put(rel, data):
@@ -413,12 +423,29 @@ def start_icons(name):
     ICONS_PID.write_text(str(job.pid))
 
 
+def icon_args(palette):
+    """recolor_icons' accent, tint and grayscale. Icons follow the accent unless
+    the palette gives them their own color."""
+    c = palette["colors"]
+    return c.get("icons", c["accent"]), palette.get("icon_tint", 0.0), palette.get("icon_grayscale", False)
+
+
+def prune_tela():
+    """Deletes built Tela themes no palette uses anymore (an old accent or tint)."""
+    try:
+        wanted = {tela_name(*icon_args(tomllib.loads((PALETTES / f"{n}.toml").read_text()))) for n in names()}
+    except (tomllib.TOMLDecodeError, KeyError, TypeError):
+        return  # a broken palette may still want its theme; load reports it on its switch
+    wanted.add("Tela-circle-paletti-base")
+    for path in ICON_DIRS[0].glob("Tela-circle-paletti-*"):
+        if path.name.removesuffix(".partial").removesuffix("-dark") not in wanted:
+            shutil.rmtree(path)
+
+
 def apply_icons(name):
     palette = load(name)
-    # Icons follow the accent unless the palette gives them their own color.
-    c = palette["colors"]
-    message = recolor_icons(palette["icon_color"], c.get("icons", c["accent"]), palette.get("icon_tint", 0.0),
-                            palette.get("icon_grayscale", False))
+    message = recolor_icons(palette["icon_color"], *icon_args(palette))
+    prune_tela()
     if message:
         print(message, file=sys.stderr)
     # Last, so it shows up once everything, icons included, has switched. This job

@@ -144,8 +144,9 @@ paletti looks at the active icon theme and does what fits it:
 | **Color-variant themes** (`Tela-purple-dark`, `Colloid-Green-Dark`, ...) | Switches to the installed variant of the first `icon_color`. |
 | **Adwaita** | Nothing to do; folders follow the GNOME accent color. |
 
-Colors are always generated from the original icons, so they never drift. After a
-Tela update, delete `~/.local/share/icons/Tela-circle-paletti-*` to rebuild them. Themes that name colors differently (for example `Qogir-manjaro` for green)
+Colors are always generated from the original icons, so they never drift. Tela
+themes no palette uses anymore are deleted after a switch, and a Tela update
+rebuilds them. Themes that name colors differently (for example `Qogir-manjaro` for green)
 are left unchanged with a message.
 
 ## Wallpapers
