@@ -752,6 +752,8 @@ def build_gdm_gresource(original, palette, out):
 
         def copy(path):
             for child in resource.enumerate_children(prefix + path, 0):
+                if path + child == "paletti-gdm.png":
+                    continue  # an already patched source: the palette's own goes in below
                 if child.endswith("/"):
                     copy(path + child)
                     continue

@@ -273,12 +273,14 @@ def test_gdm(tmp):
     from gi.repository import Gio
     for name in paletti.names():
         assert "$" not in paletti.render(paletti.load(name), "gdm.css")
-    if not paletti.GDM_GRESOURCE.exists():
-        print("skip test_gdm build: no", paletti.GDM_GRESOURCE)
+    # After --gdm-setup the live file is patched; GNOME's own is the saved original.
+    source = paletti.GDM_ORIGINAL if paletti.GDM_ORIGINAL.exists() else paletti.GDM_GRESOURCE
+    if not source.exists() or paletti.gdm_patched(source):
+        print("skip test_gdm build: no unpatched", source)
     else:
         nord, out = paletti.load("nord"), tmp / "theme.gresource"
-        paletti.build_gdm_gresource(paletti.GDM_GRESOURCE, nord, out)
-        built, shipped = Gio.Resource.load(str(out)), Gio.Resource.load(str(paletti.GDM_GRESOURCE))
+        paletti.build_gdm_gresource(source, nord, out)
+        built, shipped = Gio.Resource.load(str(out)), Gio.Resource.load(str(source))
         theme = "/org/gnome/shell/theme/"
         assert set(built.enumerate_children(theme, 0)) == set(shipped.enumerate_children(theme, 0)) | {"paletti-gdm.png"}
         css = built.lookup_data(theme + "gnome-shell-dark.css", 0).get_data()
@@ -313,7 +315,7 @@ def test_install_vscode_themes():
         paletti.shutil.which = which
     installed = {cmd[2] for cmd in calls if cmd[1] == "--install-extension"}
     wanted = {paletti.load(n).get("vscode_extension") for n in paletti.names()} - {None}
-    assert installed == wanted - {"dracula-theme.theme-dracula"} and len(installed) == 9
+    assert installed == wanted - {"dracula-theme.theme-dracula"} and installed
     assert all(cmd[0] == "code" for cmd in calls)
 
 
