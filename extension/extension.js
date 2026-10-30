@@ -12,6 +12,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Mtk from 'gi://Mtk';
+import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -92,10 +93,23 @@ class PalettiToggle extends QuickSettings.QuickMenuToggle {
         const current = currentPalette();
         this.subtitle = current ? title(current) : null;
 
-        const names = (await paletti('--list')).split('\n').filter(Boolean);
+        let palettes = {}; // name -> accent colors, for the swatches
+        try {
+            palettes = JSON.parse(await paletti('--list-colors'));
+        } catch {
+            // an empty menu, like a failed --list before
+        }
         this._palettes.removeAll();
-        for (const name of names) {
+        for (const [name, colors] of Object.entries(palettes)) {
             const item = new PopupMenu.PopupMenuItem(title(name));
+            const dots = new St.BoxLayout({x_expand: true, x_align: Clutter.ActorAlign.END, style: 'spacing: 4px;'});
+            for (const color of colors) {
+                dots.add_child(new St.Widget({
+                    style: `background-color: ${color}; border-radius: 5px; width: 10px; height: 10px;`,
+                    y_align: Clutter.ActorAlign.CENTER,
+                }));
+            }
+            item.add_child(dots);
             item.setOrnament(name === current ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
             item.connect('activate', () => this._apply(name));
             this._palettes.addMenuItem(item);

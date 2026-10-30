@@ -672,6 +672,17 @@ def install():
     install_vscode_themes()
 
 
+def swatches(name):
+    """A palette's accent colors; none for a broken file, the menu still lists it."""
+    try:
+        c = tomllib.loads((PALETTES / f"{name}.toml").read_text()).get("colors", {})
+    except tomllib.TOMLDecodeError:
+        return []
+    # Checked, since the extension puts them into a style string; a repeated color shows once.
+    return list(dict.fromkeys(c[role].lower() for role in ("accent", "accent2", "heading")
+                              if HEX_COLOR.fullmatch(str(c.get(role)))))
+
+
 def install_vscode_themes():
     """The Marketplace themes palettes switch VS Code to, for each VS Code found."""
     wanted = {load(name).get("vscode_extension") for name in names()} - {None}
@@ -687,6 +698,8 @@ def install_vscode_themes():
 def main(args):
     if args == ["--list"]:
         print("\n".join(names()))
+    elif args == ["--list-colors"]:  # for the Quick Settings menu's swatches
+        print(json.dumps({name: swatches(name) for name in names()}))
     elif args == ["--install"]:
         install()
     elif len(args) == 2 and args[0] == "--icons" and args[1] in names():  # internal, see start_icons

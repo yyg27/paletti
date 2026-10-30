@@ -255,6 +255,18 @@ def test_vscode(tmp):
     assert (codium / "settings.json").read_text() == jsonc
 
 
+def test_swatches(tmp):
+    """Every palette has accent swatches; a broken file gets none instead of breaking the menu."""
+    assert all(2 <= len(paletti.swatches(name)) <= 3 for name in paletti.names())
+    paletti.PALETTES = tmp
+    try:
+        (tmp / "broken.toml").write_text("name = ")
+        (tmp / "odd.toml").write_text('[colors]\naccent = "red; width: 900px"\naccent2 = "#ABCDEF"\n')
+        assert paletti.swatches("broken") == [] and paletti.swatches("odd") == ["#abcdef"]
+    finally:
+        paletti.PALETTES = paletti.HERE / "palettes"
+
+
 def test_install_vscode_themes():
     """Only missing theme extensions are installed, and only for a VS Code that exists."""
     calls = []
@@ -297,7 +309,7 @@ def test_adwaita():
 
 if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
-                 test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup,
+                 test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup, test_swatches,
                  test_vscode]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
