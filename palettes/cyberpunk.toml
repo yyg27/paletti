@@ -1,7 +1,7 @@
 name = "Cyberpunk"
 description = "Neon yellow, cyan and violet on a midnight purple city."
 gnome_accent = "red"
-vscode_soften = 0.35   # VS Code syntax colors 35% toward gray, the neons glare
+vscode_theme = "SynthWave '84"
 icon_color = ["yellow"]
 icon_tint = 0.2
 wallpaper = "wallpapers/cyberpunk/cyberpunk.jpg"

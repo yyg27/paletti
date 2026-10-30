@@ -246,17 +246,6 @@ def test_vscode(tmp):
     semantic = result["editor.semanticTokenColorCustomizations"]["rules"]
     assert semantic["function"] == redemption["colors"]["accent2"]
 
-    cyberpunk = paletti.load("cyberpunk")  # vscode_soften: syntax colors toward gray
-    paletti.apply_vscode(cyberpunk)
-    result = json.loads(settings.read_text())
-    c = cyberpunk["colors"]
-    gray = "#" + paletti.mix(c["bg"][1:], c["fg"], 0.5)
-    soft = "#" + paletti.mix(c["accent"][1:], gray, cyberpunk["vscode_soften"])
-    keywords = next(r for r in result["editor.tokenColorCustomizations"]["textMateRules"] if r["name"] == "paletti: keywords")
-    assert keywords["settings"]["foreground"] == soft != c["accent"]
-    assert result["editor.semanticTokenColorCustomizations"]["rules"]["keyword"] == soft
-    assert result["workbench.colorCustomizations"]["button.background"] == c["accent"]  # interface stays
-
     paletti.apply_vscode(paletti.load("nord"))
     result = json.loads(settings.read_text())
     assert result["workbench.colorTheme"] == "Nord"

@@ -397,14 +397,6 @@ def apply_vscode(palette):
     original is backed up once."""
     ours = json.loads(render(palette, "vscode.json"))
     theme = palette.get("vscode_theme")
-    if soften := palette.get("vscode_soften", 0.0):
-        # Neon palettes glare as syntax colors: they move toward the gray halfway between
-        # background and text, which dims them and takes out saturation but keeps their hue.
-        c = palette["colors"]
-        gray = "#" + mix(c["bg"][1:].lower(), c["fg"].lower(), 0.5)
-        for section in ["tokens", "semantic"]:
-            ours[section] = json.loads(HEX_COLOR.sub(lambda m: "#" + mix(m.group()[1:].lower(), gray, soften),
-                                                     json.dumps(ours[section])))
     for folder in VSCODE_DIRS:
         target = folder / "settings.json"
         if not target.exists():
