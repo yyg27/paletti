@@ -219,24 +219,39 @@ def test_firefox(tmp):
 
 
 def test_vscode(tmp):
-    """Palette colors merge into settings.json; the user's settings stay, a JSONC file is left alone."""
+    """A ready-made theme is switched to; a palette without one gets paletti's colors,
+    which go again on the next switch. The user's settings stay, a JSONC file is left alone."""
     paletti.sh = lambda *cmd: ""
     code, codium = tmp / "Code/User", tmp / "VSCodium/User"
     code.mkdir(parents=True)
     codium.mkdir(parents=True)
     paletti.VSCODE_DIRS = [code, codium]
     settings = code / "settings.json"
-    settings.write_text('{"editor.fontSize": 14, "workbench.colorCustomizations": {"minimap.background": "#000000"}}')
+    mine = {"name": "my strings", "scope": "string", "settings": {"foreground": "#123456"}}
+    user = {"editor.fontSize": 14, "workbench.colorCustomizations": {"minimap.background": "#000000"},
+            "editor.tokenColorCustomizations": {"textMateRules": [mine]}}
+    settings.write_text(json.dumps(user))
     jsonc = '{\n    // mine\n    "editor.fontSize": 14,\n}'
     (codium / "settings.json").write_text(jsonc)
-    for name in ["dracula", "nord"]:
-        paletti.apply_vscode(paletti.load(name))
+
+    redemption = paletti.load("redemption")
+    for _ in range(2):  # twice: paletti's rules never pile up
+        paletti.apply_vscode(redemption)
     result = json.loads(settings.read_text())
-    colors = result["workbench.colorCustomizations"]
-    assert result["editor.fontSize"] == 14 and colors["minimap.background"] == "#000000"
-    assert colors["editor.background"] == "#2e3440" and colors["terminal.ansiBrightWhite"] == "#ECEFF4"
-    assert not any("$" in v for v in colors.values())
-    assert json.loads((code / "settings.json.before-paletti").read_text())["editor.fontSize"] == 14
+    colors, rules = result["workbench.colorCustomizations"], result["editor.tokenColorCustomizations"]["textMateRules"]
+    assert result["workbench.colorTheme"] == "Default Dark Modern" and "$" not in settings.read_text()
+    assert colors["editor.background"] == redemption["colors"]["bg"] and colors["minimap.background"] == "#000000"
+    assert colors["terminal.ansiBrightWhite"] == redemption["terminal"]["palette"][15]
+    assert rules[-1] == mine and sum(r["name"].startswith("paletti:") for r in rules) == len(rules) - 1
+    semantic = result["editor.semanticTokenColorCustomizations"]["rules"]
+    assert semantic["function"] == redemption["colors"]["accent2"]
+
+    paletti.apply_vscode(paletti.load("nord"))
+    result = json.loads(settings.read_text())
+    assert result["workbench.colorTheme"] == "Nord"
+    assert {k: v for k, v in result.items() if k not in ("workbench.colorTheme", "editor.semanticTokenColorCustomizations")} == user
+    assert "rules" not in result["editor.semanticTokenColorCustomizations"]
+    assert json.loads((code / "settings.json.before-paletti").read_text()) == user
     assert (codium / "settings.json").read_text() == jsonc
 
 

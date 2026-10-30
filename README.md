@@ -37,9 +37,28 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | Blur my Shell | Top bar, menu and dock blur turned off; their shapes show around paletti's |
 | Window buttons (GTK apps) | Small circles: close in the palette's red, minimize and maximize in its own accent colors |
 | Window buttons (Firefox) | The same circles through `chrome/userChrome.css` in the default profile, from `firefox.css`; `user.js` turns on `toolkit.legacyUserProfileCustomizations.stylesheets`. Firefox picks them up on its next start |
-| VS Code (and VSCodium) | Editor, side bar, tabs, status bar and terminal colors merged into `workbench.colorCustomizations` in `settings.json`, from `vscode.json`; other settings stay, the original is kept once as `settings.json.before-paletti`. Syntax colors stay the color theme's. A `settings.json` with comments is left alone |
+| VS Code (and VSCodium) | Switches `workbench.colorTheme` in `settings.json` to the palette's `vscode_theme`, a ready-made theme from the Marketplace (install its extension once, see below). A palette without one gets `Default Dark Modern` with interface, terminal and syntax colors from `vscode.json` on top. Other settings and your own colors and token rules stay; the original is kept once as `settings.json.before-paletti`. A `settings.json` with comments is left alone |
 | Icons | See [Icons](#icons) |
 | Wallpaper and lock screen | See [Wallpapers](#wallpapers) |
+
+### VS Code themes
+
+| Palette | `vscode_theme` | Extension |
+| --- | --- | --- |
+| Catppuccin Mocha | Catppuccin Mocha | `catppuccin.catppuccin-vsc` |
+| Cyberpunk | Activate UMBRA protocol | `max-ss.cyberpunk` |
+| Dracula | Dracula Theme | `dracula-theme.theme-dracula` |
+| Evangelion | EVA Unit-01 Berserk | `engr.neon-genesis-evangelion-themes` |
+| Everforest | Everforest Dark | `sainnhe.everforest` |
+| Gruvbox | Gruvbox Dark Medium | `jdinhlife.gruvbox` |
+| Kanagawa | Kanagawa | `qufiwefefwoyn.kanagawa` |
+| Monochrome | Monochrome Dark | `anotherglitchinthematrix.monochrome` |
+| Nord | Nord | `arcticicestudio.nord-visual-studio-code` |
+| Tokyo Night | Tokyo Night | `enkia.tokyo-night` |
+| Redemption | none, paletti's own colors | |
+
+Install them once with `code --install-extension <extension>`. A missing one makes
+VS Code fall back to its default theme.
 
 ## Requirements
 
@@ -87,6 +106,7 @@ A palette is a TOML file in `palettes/`. Adding a theme means adding one file.
 name = "Everforest"
 description = "A green based color scheme, designed to be warm and soft."   # notification text
 gnome_accent = "green"   # blue teal green yellow orange red pink purple slate
+vscode_theme = "Everforest Dark"   # optional: a VS Code color theme, by its name in the theme picker
 icon_color = ["green"]   # folder color for Papirus / color-variant icon themes
 icon_tint = 0.2          # app icons move 20% toward the accent (Tela only)
 # icon_grayscale = true  # optional: app icons in grays instead (Tela only, used by Monochrome)

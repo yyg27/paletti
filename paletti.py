@@ -46,7 +46,6 @@ GTK_CSS = {"gtk4.css": HOME / ".config/gtk-4.0/gtk.css",
            "gtk3.css": HOME / ".config/gtk-3.0/gtk.css"}
 FIREFOX_DIRS = [HOME / ".config/mozilla/firefox", HOME / ".mozilla/firefox"]  # newer and older location
 VSCODE_DIRS = [HOME / ".config/Code/User", HOME / ".config/VSCodium/User", HOME / ".config/Code - OSS/User"]
-ANSI = ["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White"]
 
 ROLES = ["bg", "bg_alt", "fg", "surface", "surface_hover", "card", "card_alt", "card_hover",
          "accent", "accent_hover", "accent2", "heading", "muted"]
@@ -113,7 +112,8 @@ def render(palette, template="shell.css"):
     minimize = c["heading"] if c["heading"].lower() != c["accent"].lower() else c["accent2"]
     values = {"name": palette["name"], **c,
               "close": palette["terminal"]["palette"][1], "minimize": minimize, "maximize": c["accent"],
-              "on_accent": c.get("on_accent", c["bg"])}  # text on accent fills, bg unless the palette says otherwise
+              "on_accent": c.get("on_accent", c["bg"]),  # text on accent fills, bg unless the palette says otherwise
+              **{f"ansi{i}": color for i, color in enumerate(palette["terminal"]["palette"])}}
     for role, hex_color in palette["colors"].items():
         h = hex_color.lstrip("#")
         values[f"{role}_rgb"] = ", ".join(str(int(h[i:i + 2], 16)) for i in (0, 2, 4))
@@ -390,11 +390,13 @@ def apply(name):
 
 
 def apply_vscode(palette):
-    """Merges the palette into VS Code's settings.json, which VS Code reloads by itself.
-    The user's other settings and color keys stay; the original is backed up once."""
-    colors = json.loads(render(palette, "vscode.json"))
-    names = [f"terminal.ansi{n}" for n in ANSI] + [f"terminal.ansiBright{n}" for n in ANSI]
-    colors.update(zip(names, palette["terminal"]["palette"]))
+    """Sets VS Code's color theme in settings.json, which VS Code reloads by itself.
+    A palette with a ready-made VS Code theme (vscode_theme) just switches to it;
+    one without gets the built-in dark theme with paletti's interface and syntax
+    colors on top. The user's other settings, colors and token rules stay; the
+    original is backed up once."""
+    ours = json.loads(render(palette, "vscode.json"))
+    theme = palette.get("vscode_theme")
     for folder in VSCODE_DIRS:
         target = folder / "settings.json"
         if not target.exists():
@@ -410,7 +412,30 @@ def apply_vscode(palette):
         backup = target.with_name("settings.json.before-paletti")
         if not backup.exists():
             shutil.copy2(target, backup)
-        settings["workbench.colorCustomizations"] = {**settings.get("workbench.colorCustomizations", {}), **colors}
+        # An earlier palette's colors go first, so a ready-made theme shows as it was made.
+        colors = {k: v for k, v in settings.get("workbench.colorCustomizations", {}).items() if k not in ours["colors"]}
+        tokens = settings.get("editor.tokenColorCustomizations", {})
+        rules = [r for r in tokens.get("textMateRules", []) if not str(r.get("name", "")).startswith("paletti:")]
+        semantic = settings.get("editor.semanticTokenColorCustomizations", {})
+        semantic_rules = {k: v for k, v in semantic.get("rules", {}).items() if k not in ours["semantic"]}
+        if not theme:
+            colors.update(ours["colors"])
+            rules = ours["tokens"] + rules  # the user's own rules come after, so they win
+            semantic_rules.update(ours["semantic"])
+            semantic.setdefault("enabled", True)  # the rules only apply with semantic highlighting on
+        settings["workbench.colorTheme"] = theme or "Default Dark Modern"
+        settings["workbench.colorCustomizations"] = colors
+        settings["editor.tokenColorCustomizations"] = {**tokens, "textMateRules": rules}
+        settings["editor.semanticTokenColorCustomizations"] = {**semantic, "rules": semantic_rules}
+        # Whatever ends up empty is dropped, so the file stays as the user wrote it.
+        for key, inner in [("editor.tokenColorCustomizations", "textMateRules"),
+                           ("editor.semanticTokenColorCustomizations", "rules")]:
+            if not settings[key][inner]:
+                del settings[key][inner]
+        for key in ["workbench.colorCustomizations", "editor.tokenColorCustomizations",
+                    "editor.semanticTokenColorCustomizations"]:
+            if not settings[key]:
+                del settings[key]
         tmp = target.with_name(".settings.json.paletti")
         tmp.write_text(json.dumps(settings, indent=4) + "\n")
         os.replace(tmp, target)  # VS Code watches the file; it never sees half of it

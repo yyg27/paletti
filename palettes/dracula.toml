@@ -1,6 +1,7 @@
 name = "Dracula"
 description = "A dark theme for all the things."   # shown in the switch notification
 gnome_accent = "purple"   # GNOME accent color: blue teal green yellow orange red pink purple slate
+vscode_theme = "Dracula Theme"
 icon_color = ["violet", "purple"]   # first one the icon theme has wins (Papirus: violet, Tela: purple)
 icon_tint = 0.2   # app icons move 20% toward the accent (Tela only, 0 = original colors)
 wallpaper = "wallpapers/dracula/dracula.png"   # default wallpaper, relative to the project

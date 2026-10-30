@@ -1,6 +1,7 @@
 name = "Catppuccin Mocha"
 description = "Soothing pastel theme for the high-spirited!"
 gnome_accent = "purple"
+vscode_theme = "Catppuccin Mocha"
 icon_color = ["violet", "purple"]
 icon_tint = 0.2
 wallpaper = "wallpapers/catppuccin-mocha/catppuccin-mocha.png"

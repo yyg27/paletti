@@ -1,6 +1,7 @@
 name = "Tokyo Night"
 description = "A clean dark theme that celebrates the lights of downtown Tokyo at night."
 gnome_accent = "blue"
+vscode_theme = "Tokyo Night"
 icon_color = ["blue"]
 icon_tint = 0.2
 wallpaper = "wallpapers/tokyo-night/tokyo-night.jpg"

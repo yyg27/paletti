@@ -1,6 +1,7 @@
 name = "Nord"
 description = "An arctic, north-bluish color palette."
 gnome_accent = "blue"
+vscode_theme = "Nord"
 icon_color = ["nordic", "blue"]
 icon_tint = 0.2
 wallpaper = "wallpapers/nord/nord.png"
