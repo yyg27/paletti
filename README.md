@@ -46,7 +46,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | Palette | `vscode_theme` | Extension |
 | --- | --- | --- |
 | Catppuccin Mocha | Catppuccin Mocha | `catppuccin.catppuccin-vsc` |
-| Cyberpunk | Activate UMBRA protocol | `max-ss.cyberpunk` |
+| Cyberpunk | none, paletti's own colors, softened (`vscode_soften = 0.35`) | |
 | Dracula | Dracula Theme | `dracula-theme.theme-dracula` |
 | Evangelion | EVA Unit-01 Berserk | `engr.neon-genesis-evangelion-themes` |
 | Everforest | Everforest Dark | `sainnhe.everforest` |
@@ -107,6 +107,7 @@ name = "Everforest"
 description = "A green based color scheme, designed to be warm and soft."   # notification text
 gnome_accent = "green"   # blue teal green yellow orange red pink purple slate
 vscode_theme = "Everforest Dark"   # optional: a VS Code color theme, by its name in the theme picker
+# vscode_soften = 0.35   # optional, without vscode_theme: dims glaring syntax colors toward gray (Cyberpunk)
 icon_color = ["green"]   # folder color for Papirus / color-variant icon themes
 icon_tint = 0.2          # app icons move 20% toward the accent (Tela only)
 # icon_grayscale = true  # optional: app icons in grays instead (Tela only, used by Monochrome)
