@@ -20,6 +20,7 @@ dock, GTK apps, GNOME Terminal, the accent color and the icons. Press
 | Monochrome | `#111111` | `#e6e6e6` | `#e6e6e6` | `#9e9e9e` | slate |
 | [Nord](https://www.nordtheme.com) | `#2e3440` | `#eceff4` | `#88c0d0` | `#81a1c1` | blue |
 | Redemption | `#141110` | `#e8dcc2` | `#d9181f` | `#f0882a` | red |
+| [Rosé Pine](https://rosepinetheme.com) | `#191724` | `#e0def4` | `#ebbcba` | `#c4a7e7` | pink |
 | [Tokyo Night](https://github.com/folke/tokyonight.nvim) (night) | `#1a1b26` | `#c0caf5` | `#7aa2f7` | `#bb9af7` | blue |
 
 More themes are one TOML file each, see [Palettes](#palettes).
@@ -55,6 +56,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | Kanagawa | Kanagawa | `qufiwefefwoyn.kanagawa` |
 | Monochrome | Monochrome Dark | `anotherglitchinthematrix.monochrome` |
 | Nord | Nord | `arcticicestudio.nord-visual-studio-code` |
+| Rosé Pine | Rosé Pine | `mvllow.rose-pine` |
 | Tokyo Night | Tokyo Night | `enkia.tokyo-night` |
 | Redemption | none, paletti's own colors | |
 
