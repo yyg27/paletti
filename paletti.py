@@ -207,6 +207,15 @@ def copy_tela(src, dst, links_from, copy_function):
 
 
 def recolor_tela(accent, tint=0.0, grayscale=False):
+    """build_tela, one at a time: a switch's icon job and --prebuild-icons may build the
+    same copy at once. The lock goes with the process, so a stopped job never holds it."""
+    ICON_DIRS[0].mkdir(parents=True, exist_ok=True)
+    with (ICON_DIRS[0] / ".paletti-tela.lock").open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        return build_tela(accent, tint, grayscale)
+
+
+def build_tela(accent, tint=0.0, grayscale=False):
     """Builds tela_name(accent, tint)(-dark): the installed Tela-circle with its blue
     replaced by the accent and app icons tinted toward it. Each is built once and
     kept, so switching back to a palette only changes the theme name. Files left
@@ -618,10 +627,30 @@ def apply_icons(name):
     prune_tela()
     if message:
         print(message, file=sys.stderr)
+    body = message or palette.get("description", "")
+    if gdm_outdated():
+        body += "\nLogin screen is out of date: sudo ~/.local/bin/paletti --gdm-setup"
     # Last, so it shows up once everything, icons included, has switched. This job
     # runs detached, so the notification is the only place an icon problem is seen.
-    sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"],
-       message or palette.get("description", ""))
+    sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"], body)
+
+
+def gdm_outdated():
+    """True when --gdm-setup ran but its root copy no longer has the current palettes,
+    wallpapers or login screen stylesheet. Without the setup it never nags."""
+    if not GDM_HOME.is_dir():
+        return False
+
+    def snapshot(root):
+        files = [p for folder in ["palettes", "wallpapers"] for p in (root / folder).rglob("*") if p.is_file()]
+        files += [root / "gdm.css"] if (root / "gdm.css").is_file() else []
+        # Text files by content, images by size: reading every wallpaper on each switch is too slow.
+        return {str(p.relative_to(root)): p.read_bytes() if p.suffix in (".toml", ".css") else p.stat().st_size
+                for p in files}
+    try:
+        return snapshot(HERE) != snapshot(GDM_HOME)
+    except OSError:
+        return False
 
 
 def load_config():
@@ -785,6 +814,18 @@ def install():
     print(f"Installed: {link}, shortcuts Super+Y (theme) and Super+Shift+Y (wallpaper)")
     print(f"Extension {EXTENSION_UUID} enabled; log out and back in once for the screen transition.")
     install_vscode_themes()
+    subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--prebuild-icons"],
+                     start_new_session=True, stdout=subprocess.DEVNULL)
+    print("Building every palette's icons in the background, so even first switches are instant.")
+
+
+def prebuild_icons():
+    """Builds the Tela copy of every palette ahead, when Tela is the icon theme."""
+    theme = sh("gsettings", "get", "org.gnome.desktop.interface", "icon-theme").strip("'")
+    if theme not in ("Tela-circle", "Tela-circle-dark") and not theme.startswith("Tela-circle-paletti"):
+        return
+    for name in names():
+        recolor_tela(*icon_args(load(name)))
 
 
 def swatches(name):
@@ -984,6 +1025,8 @@ def main(args):
         print(json.dumps({name: swatches(name) for name in names()}))
     elif args == ["--install"]:
         install()
+    elif args == ["--prebuild-icons"]:  # internal, started by --install
+        prebuild_icons()
     elif len(args) == 2 and args[0] == "--icons" and args[1] in names():  # internal, see start_icons
         apply_icons(args[1])
     elif args == ["--gdm-setup"]:

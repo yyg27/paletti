@@ -354,6 +354,26 @@ def test_gdm(tmp):
     assert paletti.read_palette_name(state) is None  # a link is never followed as root
 
 
+def test_gdm_outdated(tmp):
+    """The reminder only shows once --gdm-setup ran and its copy no longer matches."""
+    home, saved = paletti.GDM_HOME, (paletti.GDM_HOME, paletti.HERE)
+    try:
+        paletti.GDM_HOME = tmp / "missing"
+        assert not paletti.gdm_outdated()  # never set up: no nagging
+        paletti.HERE, paletti.GDM_HOME = tmp / "checkout", tmp / "root"
+        for root in [paletti.HERE, paletti.GDM_HOME]:
+            (root / "palettes").mkdir(parents=True)
+            (root / "wallpapers").mkdir()
+            (root / "palettes/a.toml").write_text("x")
+            (root / "gdm.css").write_text("y")
+        assert not paletti.gdm_outdated()
+        (paletti.HERE / "palettes/b.toml").write_text("new palette")
+        assert paletti.gdm_outdated()
+    finally:
+        paletti.GDM_HOME, paletti.HERE = saved
+    assert paletti.GDM_HOME == home
+
+
 def test_install_vscode_themes():
     """Only missing theme extensions are installed, and only for a VS Code that exists."""
     calls = []
@@ -397,7 +417,7 @@ def test_adwaita():
 if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
                  test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup, test_swatches, test_gdm,
-                 test_other_apps,
+                 test_other_apps, test_gdm_outdated,
                  test_vscode]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
