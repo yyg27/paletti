@@ -1,8 +1,10 @@
 """Icon recolor checks on fake icon dirs; gsettings is faked. Run: python3 test_paletti.py"""
 
+import base64
 import json
 import os
 import re
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -118,6 +120,59 @@ def test_wallpaper(tmp):
     assert paletti.pick_wallpaper(options, "chosen", None) == default  # nothing picked yet
     assert paletti.pick_wallpaper(options, "keep", own) is None
     assert paletti.pick_wallpaper([], "default", None) is None
+
+
+def test_other_apps(icons):
+    """Apps Tela has no icon for get the palette's treatment too, from their own SVG or PNG."""
+    import gi
+    gi.require_version("GdkPixbuf", "2.0")
+    from gi.repository import GdkPixbuf
+    paletti.TELA_SRC = icons / "src"
+    (icons / "src/Tela-circle/scalable/apps").mkdir(parents=True)
+    (icons / "src/Tela-circle/scalable/apps/known.svg").write_text("")
+    data = icons / "data"
+    (data / "applications").mkdir(parents=True)
+    for app, icon in [("vector", "vector"), ("bitmap", "bitmap"), ("known", "known"), ("pathed", "/opt/x.png")]:
+        (data / f"applications/{app}.desktop").write_text(f"[Desktop Entry]\nName={app}\nIcon={icon}\n")
+    (data / "icons/hicolor/scalable/apps").mkdir(parents=True)
+    (data / "icons/hicolor/scalable/apps/vector.svg").write_text('<svg fill="#ff8800"/>')
+    for size in [16, 48]:
+        (data / f"icons/hicolor/{size}x{size}/apps").mkdir(parents=True)
+        png = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, size, size)
+        png.fill(0xff8800ff)
+        png.savev(str(data / f"icons/hicolor/{size}x{size}/apps/bitmap.png"), "png", [], [])
+    theme = icons / "Tela-circle-paletti-test"
+    dark = icons / "Tela-circle-paletti-test-dark"
+    (theme / "scalable/apps").mkdir(parents=True)
+    (dark / "scalable").mkdir(parents=True)
+    (dark / "scalable/apps").symlink_to("../../Tela-circle-paletti-test/scalable/apps")  # as in Tela
+    for variant in [theme, dark]:
+        (variant / "index.theme").write_text("[Icon Theme]\nName=test\nDirectories=scalable/apps\n\n"
+                                             "[scalable/apps]\nSize=16\nType=Scalable\n")
+    saved = {k: os.environ.get(k) for k in ("XDG_DATA_HOME", "XDG_DATA_DIRS")}
+    os.environ.update(XDG_DATA_HOME=str(data), XDG_DATA_DIRS=str(icons / "none"))
+    try:
+        paletti.recolor_other_apps(theme, "#e6e6e6", 0.0, grayscale=True)  # Monochrome
+        apps = theme / "scalable/apps"
+        assert sorted(p.name for p in apps.iterdir()) == ["bitmap.svg", "vector.svg"]
+        assert paletti.gray("ff8800") in (apps / "vector.svg").read_text()
+        png = base64.b64decode((apps / "bitmap.svg").read_text().split("base64,")[1].split('"')[0])
+        loader = GdkPixbuf.PixbufLoader()
+        loader.write(png)
+        loader.close()
+        pixel = loader.get_pixbuf()
+        assert pixel.get_width() == 48  # the biggest PNG was used
+        r, g, b = pixel.get_pixels()[:3]
+        assert r == g == b == int(paletti.gray("ff8800")[:2], 16)
+        if shutil.which("gtk-update-icon-cache"):
+            cache = theme / "icon-theme.cache"
+            assert cache.exists() and (icons / "Tela-circle-paletti-test-dark/icon-theme.cache").exists()
+            before = cache.stat().st_mtime_ns
+            paletti.recolor_other_apps(theme, "#e6e6e6", 0.0, grayscale=True)
+            assert cache.stat().st_mtime_ns == before  # nothing changed, cache left alone
+    finally:
+        for k, v in saved.items():
+            os.environ.pop(k, None) if v is None else os.environ.update({k: v})
 
 
 def test_tela_cleanup(icons):
@@ -342,6 +397,7 @@ def test_adwaita():
 if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
                  test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup, test_swatches, test_gdm,
+                 test_other_apps,
                  test_vscode]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]

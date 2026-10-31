@@ -19,6 +19,7 @@
 
 import ast
 import colorsys
+import base64
 import configparser
 import fcntl
 import json
@@ -267,6 +268,102 @@ def recolor_tela(accent, tint=0.0, grayscale=False):
     return None
 
 
+def xdg_data_dirs():
+    home = os.environ.get("XDG_DATA_HOME") or str(HOME / ".local/share")
+    dirs = [home, *(os.environ.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share").split(":")]
+    # Flatpak's exports are in a session's XDG_DATA_DIRS, but not when started without one.
+    dirs += [f"{home}/flatpak/exports/share", "/var/lib/flatpak/exports/share"]
+    return list(dict.fromkeys(Path(d) for d in dirs if d))
+
+
+def app_icon_names():
+    """The Icon= of every installed app (system, user, Flatpak, Snap: all XDG data dirs)."""
+    icons = set()
+    for data in xdg_data_dirs():
+        for entry in (data / "applications").glob("*.desktop"):
+            desktop = configparser.ConfigParser(interpolation=None, strict=False)
+            try:
+                desktop.read(entry, encoding="utf-8")
+                icon = desktop.get("Desktop Entry", "Icon", fallback="").strip()
+            except (configparser.Error, UnicodeDecodeError):
+                continue
+            if icon and "/" not in icon:  # a full path cannot be replaced by an icon theme
+                icons.add(icon)
+    return icons
+
+
+def find_app_icon(name):
+    """The app's own icon: its SVG if it has one, else its biggest PNG."""
+    pngs = []
+    for data in xdg_data_dirs():
+        hicolor = data / "icons/hicolor"
+        for svg in [hicolor / f"scalable/apps/{name}.svg", data / f"pixmaps/{name}.svg"]:
+            if svg.is_file():
+                return svg
+        pngs += [(int(p.parent.parent.name.split("x")[0]), p) for p in hicolor.glob(f"*x*/apps/{name}.png")
+                 if p.parent.parent.name.split("x")[0].isdigit()]
+        if (data / f"pixmaps/{name}.png").is_file():
+            pngs.append((0, data / f"pixmaps/{name}.png"))
+    return max(pngs)[1] if pngs else None
+
+
+def recolor_png(path, recolor):
+    """A PNG icon recolored pixel by pixel, wrapped in an SVG: Tela's app icons are SVG only."""
+    import gi
+    gi.require_version("GdkPixbuf", "2.0")
+    from gi.repository import GdkPixbuf, GLib
+    image = GdkPixbuf.Pixbuf.new_from_file(str(path)).add_alpha(False, 0, 0, 0)
+    if max(image.get_width(), image.get_height()) > 256:
+        size = 256 / max(image.get_width(), image.get_height())
+        image = image.scale_simple(round(image.get_width() * size), round(image.get_height() * size),
+                                   GdkPixbuf.InterpType.HYPER)
+    width, height, stride = image.get_width(), image.get_height(), image.get_rowstride()
+    pixels = bytearray(image.get_pixels())
+    cache = {}
+    for row in range(height):
+        for i in range(row * stride, row * stride + width * 4, 4):
+            rgb = bytes(pixels[i:i + 3])
+            if rgb not in cache:
+                cache[rgb] = bytes.fromhex(recolor(rgb.hex()))
+            pixels[i:i + 3] = cache[rgb]
+    out = GdkPixbuf.Pixbuf.new_from_bytes(GLib.Bytes.new(bytes(pixels)), GdkPixbuf.Colorspace.RGB,
+                                          True, 8, width, height, stride)
+    png = base64.b64encode(out.save_to_bufferv("png", [], [])[1]).decode()
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">'
+            f'<image width="{width}" height="{height}" href="data:image/png;base64,{png}"/></svg>').encode()
+
+
+def recolor_other_apps(theme, accent, tint, grayscale):
+    """Apps whose icon Tela lacks get the same tint (or gray) as Tela's, from their
+    own SVG or PNG. Runs on every switch, as it is quick, so apps installed later
+    are picked up; GTK's icon cache is only redone when an icon changed."""
+    if not (tint or grayscale):
+        return
+    recolor = (lambda h: gray(h)) if grayscale else (lambda h: mix(h, accent, tint))
+    tela = {p.stem for p in (TELA_SRC / "Tela-circle").rglob("*.svg")}  # any size or context
+    changed = False
+    # Symbolic icons are drawn in the text color by GTK already.
+    for name in sorted(n for n in app_icon_names() - tela if not n.endswith("-symbolic")):
+        source = find_app_icon(name)
+        if source is None:
+            continue
+        if source.suffix == ".svg":
+            data = HEX.sub(lambda m: b"#" + recolor(m.group(1).decode().lower()).encode(), source.read_bytes())
+        else:
+            data = recolor_png(source, recolor)
+        target = theme / f"scalable/apps/{name}.svg"  # -dark links this folder to here
+        if not target.exists() or target.read_bytes() != data:
+            target.unlink(missing_ok=True)  # never write through a hard link into the base copy
+            target.write_bytes(data)
+            changed = True
+    if changed and shutil.which("gtk-update-icon-cache"):
+        # GTK only sees icons its cache lists. The cache is a hard link into the shared
+        # base copy, so it is unlinked first and written anew.
+        for variant in [theme, theme.with_name(theme.name + "-dark")]:
+            (variant / "icon-theme.cache").unlink(missing_ok=True)
+            subprocess.run(["gtk-update-icon-cache", "-f", "-q", str(variant)])
+
+
 def recolor_icons(colors, accent, tint=0.0, grayscale=False):
     """Recolors the active icon theme; returns a message when that is not possible."""
     theme = sh("gsettings", "get", "org.gnome.desktop.interface", "icon-theme").strip("'")
@@ -276,6 +373,8 @@ def recolor_icons(colors, accent, tint=0.0, grayscale=False):
         return None  # Adwaita folders already follow the GNOME accent color.
     if theme in ("Tela-circle", "Tela-circle-dark") or theme.startswith("Tela-circle-paletti"):
         message = recolor_tela(accent, tint, grayscale)
+        if message is None:
+            recolor_other_apps(ICON_DIRS[0] / tela_name(accent, tint, grayscale), accent, tint, grayscale)
         new = tela_name(accent, tint, grayscale) + ("-dark" if theme.endswith("dark") else "")
         if message is None and new != theme:
             # A new name reloads icons by itself, no Adwaita swap needed.
