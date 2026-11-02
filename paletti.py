@@ -64,6 +64,7 @@ GTK_CSS = {"gtk4.css": HOME / ".config/gtk-4.0/gtk.css",
            "gtk3.css": HOME / ".config/gtk-3.0/gtk.css"}
 FIREFOX_DIRS = [HOME / ".config/mozilla/firefox", HOME / ".mozilla/firefox"]  # newer and older location
 VSCODE_DIRS = [HOME / ".config/Code/User", HOME / ".config/VSCodium/User", HOME / ".config/Code - OSS/User"]
+SOURCEVIEW_STYLES = HOME / ".local/share/gtksourceview-5/styles"  # GNOME Text Editor's color schemes
 
 ROLES = ["bg", "bg_alt", "fg", "surface", "surface_hover", "card", "card_alt", "card_hover",
          "accent", "accent_hover", "accent2", "heading", "muted"]
@@ -124,7 +125,7 @@ def load(name):
     return palette
 
 
-def render(palette, template="shell.css"):
+def render(palette, template="shell.css", **extra):
     c = palette["colors"]
     # Window buttons: close in the palette's own red, the others in its signature colors.
     minimize = c["heading"] if c["heading"].lower() != c["accent"].lower() else c["accent2"]
@@ -135,7 +136,7 @@ def render(palette, template="shell.css"):
     for role, hex_color in palette["colors"].items():
         h = hex_color.lstrip("#")
         values[f"{role}_rgb"] = ", ".join(str(int(h[i:i + 2], 16)) for i in (0, 2, 4))
-    return Template((HERE / template).read_text()).substitute(values)
+    return Template((HERE / template).read_text()).substitute(values, **extra)
 
 
 def sh(*cmd):
@@ -487,6 +488,7 @@ def apply(name):
                 f.write(pref + "\n")
 
     apply_vscode(palette)
+    apply_text_editor(name, palette)
     apply_wallpaper(name, palette)
 
     # GNOME Terminal default profile.
@@ -564,6 +566,18 @@ def apply_vscode(palette):
         tmp = target.with_name(".settings.json.paletti")
         tmp.write_text(json.dumps(settings, indent=4) + "\n")
         os.replace(tmp, target)  # VS Code watches the file; it never sees half of it
+
+
+def apply_text_editor(name, palette):
+    """GNOME Text Editor: a GtkSourceView scheme per palette, chosen by its id, so a
+    switch only changes the setting and the editor needs no reload."""
+    if sh("gsettings", "writable", "org.gnome.TextEditor", "style-scheme") != "true":
+        return  # Text Editor is not installed
+    scheme = f"paletti-{name}"
+    SOURCEVIEW_STYLES.mkdir(parents=True, exist_ok=True)
+    (SOURCEVIEW_STYLES / f"{scheme}.xml").write_text(
+        render(palette, "gtksourceview.xml", scheme=scheme, name=escape(palette["name"])))
+    sh("gsettings", "set", "org.gnome.TextEditor", "style-scheme", scheme)
 
 
 def write_generated(target, text):

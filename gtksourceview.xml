@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- paletti-generated ($name). Do not edit by hand, overwritten on the next theme switch. -->
+<style-scheme id="$scheme" name="paletti $name" version="1.0">
+  <author>paletti</author>
+  <description>The $name palette, for GNOME Text Editor.</description>
+  <metadata>
+    <property name="variant">dark</property>
+  </metadata>
+
+  <style name="text" foreground="$fg" background="$bg"/>
+  <style name="selection" background="$surface_hover"/>
+  <style name="selection-unfocused" background="$surface"/>
+  <style name="cursor" foreground="$accent"/>
+  <style name="current-line" background="$card"/>
+  <style name="line-numbers" foreground="$muted" background="$bg"/>
+  <style name="current-line-number" foreground="$fg" background="$card"/>
+  <style name="bracket-match" background="$surface_hover" bold="true"/>
+  <style name="bracket-mismatch" foreground="$ansi1" underline="error"/>
+  <style name="search-match" foreground="$fg" background="$surface_hover"/>
+  <style name="right-margin" foreground="$surface" background="$bg_alt"/>
+  <style name="draw-spaces" foreground="$surface_hover"/>
+
+  <!-- Same roles as vscode.json: keywords accent, functions accent2, types heading. -->
+  <style name="def:comment" foreground="$muted" italic="true"/>
+  <style name="def:shebang" foreground="$muted" bold="true"/>
+  <style name="def:doc-comment-element" foreground="$muted" bold="true"/>
+  <style name="def:keyword" foreground="$accent"/>
+  <style name="def:statement" foreground="$accent"/>
+  <style name="def:builtin" foreground="$accent2"/>
+  <style name="def:function" foreground="$accent2"/>
+  <style name="def:type" foreground="$heading"/>
+  <style name="def:identifier" foreground="$fg"/>
+  <style name="def:operator" foreground="$fg"/>
+  <style name="def:string" foreground="$ansi2"/>
+  <style name="def:special-char" foreground="$ansi6"/>
+  <style name="def:number" foreground="$ansi3"/>
+  <style name="def:constant" foreground="$ansi3"/>
+  <style name="def:boolean" foreground="$ansi3"/>
+  <style name="def:special-constant" foreground="$ansi3"/>
+  <style name="def:preprocessor" foreground="$ansi5"/>
+  <style name="def:error" foreground="$ansi1" underline="error"/>
+  <style name="def:warning" foreground="$ansi3" underline="error"/>
+  <style name="def:note" foreground="$heading" bold="true"/>
+  <style name="def:net-address" foreground="$accent" underline="single"/>
+  <style name="def:heading" foreground="$heading" bold="true"/>
+  <style name="def:emphasis" italic="true"/>
+  <style name="def:strong-emphasis" bold="true"/>
+  <style name="def:inline-code" foreground="$ansi2"/>
+  <style name="def:link-text" foreground="$accent"/>
+  <style name="def:link-destination" foreground="$muted" underline="single"/>
+  <style name="def:insertion" foreground="$ansi2"/>
+  <style name="def:deletion" foreground="$ansi1"/>
+</style-scheme>

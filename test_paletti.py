@@ -374,6 +374,27 @@ def test_gdm_outdated(tmp):
     assert paletti.GDM_HOME == home
 
 
+def test_text_editor(tmp):
+    """Every palette's scheme loads in GtkSourceView with the palette's colors, and is chosen by id."""
+    import gi
+    gi.require_version("GtkSource", "5")
+    from gi.repository import GtkSource
+    calls = []
+    paletti.sh = lambda *cmd: calls.append(cmd) or ("true" if cmd[1] == "writable" else "")
+    paletti.SOURCEVIEW_STYLES = tmp / "styles"
+    manager = GtkSource.StyleSchemeManager()
+    manager.set_search_path([str(tmp / "styles")])
+    for name in paletti.names():
+        palette = paletti.load(name)
+        paletti.apply_text_editor(name, palette)
+        manager.force_rescan()
+        scheme = manager.get_scheme(f"paletti-{name}")
+        assert scheme is not None, name
+        assert scheme.get_style("def:keyword").props.foreground.lower() == palette["colors"]["accent"].lower()
+        assert scheme.get_style("text").props.background.lower() == palette["colors"]["bg"].lower()
+        assert calls[-1] == ("gsettings", "set", "org.gnome.TextEditor", "style-scheme", f"paletti-{name}")
+
+
 def test_install_vscode_themes():
     """Only missing theme extensions are installed, and only for a VS Code that exists."""
     calls = []
@@ -417,12 +438,13 @@ def test_adwaita():
 if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
                  test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup, test_swatches, test_gdm,
-                 test_other_apps, test_gdm_outdated,
+                 test_other_apps, test_gdm_outdated, test_text_editor,
                  test_vscode]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
             paletti.FIREFOX_DIRS = [Path(tmp) / "firefox"]  # apply never touches the real profile
             paletti.VSCODE_DIRS = [Path(tmp) / "vscode"]  # nor the real VS Code settings
+            paletti.SOURCEVIEW_STYLES = Path(tmp) / "styles"  # nor Text Editor's schemes
             paletti.ICON_THEME_SWAP = Path(tmp) / "icon-theme"
             test(Path(tmp))
     test_adwaita()

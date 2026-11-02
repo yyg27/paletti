@@ -41,6 +41,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | Window buttons (GTK apps) | Small circles: close in the palette's red, minimize and maximize in its own accent colors |
 | Window buttons (Firefox) | The same circles through `chrome/userChrome.css` in the default profile, from `firefox.css`; `user.js` turns on `toolkit.legacyUserProfileCustomizations.stylesheets`. Firefox picks them up on its next start |
 | VS Code (and VSCodium) | Switches `workbench.colorTheme` in `settings.json` to the palette's `vscode_theme`, a ready-made theme from the Marketplace (install its extension once, see below). A palette without one gets `Default Dark Modern` with interface, terminal and syntax colors from `vscode.json` on top. Other settings and your own colors and token rules stay; the original is kept once as `settings.json.before-paletti`. A `settings.json` with comments is left alone |
+| GNOME Text Editor | A GtkSourceView color scheme per palette from `gtksourceview.xml` (`~/.local/share/gtksourceview-5/styles/paletti-<palette>.xml`), chosen in its `style-scheme` setting; the editor follows it right away. Its own schemes are still in its preferences |
 | Icons | See [Icons](#icons) |
 | Wallpaper and lock screen | See [Wallpapers](#wallpapers) |
 | Login screen (GDM), optional | See [Login screen](#login-screen-gdm) |
