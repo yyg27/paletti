@@ -631,12 +631,13 @@ def apply_icons(name):
     description = palette.get("description", "")
     if isinstance(description, list):  # several lines: one at random on each switch
         description = random.choice(description) if description else ""
-    body = message or description
-    if gdm_outdated():
-        body += "\nLogin screen is out of date: sudo ~/.local/bin/paletti --gdm-setup"
     # Last, so it shows up once everything, icons included, has switched. This job
     # runs detached, so the notification is the only place an icon problem is seen.
-    sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"], body)
+    sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"], message or description)
+    if gdm_outdated():
+        # Its own notification: GNOME turns line breaks in a body into spaces.
+        sh("notify-send", "--transient", "-a", "Paletti", "-t", "6000", "Login screen is out of date",
+           "sudo ~/.local/bin/paletti --gdm-setup")
 
 
 def gdm_outdated():
