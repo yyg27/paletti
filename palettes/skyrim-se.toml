@@ -1,0 +1,26 @@
+name = "Skyrim SE"
+description = "Smoky black menus, silver type and frost blue stars, like the skill screen."
+gnome_accent = "slate"
+icon_color = ["grey", "white"]
+icon_tint = 0.2
+wallpaper = "wallpapers/skyrim-se/skyrim-se.jpg"
+
+# From tui-portfolio's skyrim-se theme; bg_alt, card_alt, the hovers and the terminal are derived.
+[colors]
+bg            = "#0b0c0e"
+bg_alt        = "#070809"
+fg            = "#d9dcdf"
+surface       = "#1b1e22"
+surface_hover = "#262a2f"
+card          = "#121417"
+card_alt      = "#0f1113"
+card_hover    = "#1b1e22"
+accent        = "#c8ced6"
+accent_hover  = "#dde2e8"
+accent2       = "#a9c9e8"
+heading       = "#a9c9e8"
+muted         = "#7d848c"
+
+[terminal]
+palette = ["#1B1E22", "#B5636A", "#8FAE8B", "#C8B98F", "#7F9FBF", "#A78FB8", "#8FB8C8", "#C8CED6",
+           "#3A4048", "#C97A80", "#A6C4A2", "#DCCD9F", "#A9C9E8", "#BFAACF", "#A9D0DD", "#E6E9EC"]
