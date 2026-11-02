@@ -1,5 +1,5 @@
 name = "Everforest"
-description = "A green based color scheme, designed to be warm and soft."
+description = "Soft moss and pine, warm as an evergreen forest."
 gnome_accent = "green"
 vscode_theme = "Everforest Dark"
 vscode_extension = "sainnhe.everforest"

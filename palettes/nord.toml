@@ -1,5 +1,5 @@
 name = "Nord"
-description = "An arctic, north-bluish color palette."
+description = "Arctic frost and polar night blues."
 gnome_accent = "blue"
 vscode_theme = "Nord"
 vscode_extension = "arcticicestudio.nord-visual-studio-code"
