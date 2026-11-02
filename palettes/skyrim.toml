@@ -17,7 +17,7 @@ card_alt      = "#171511"
 card_hover    = "#26231d"
 accent        = "#8fb8d8"
 accent_hover  = "#a9c9e3"
-accent2       = "#c9b88a"
+accent2       = "#8fb8d8"
 heading       = "#c9b88a"
 muted         = "#9a8f78"
 

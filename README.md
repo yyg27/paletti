@@ -22,7 +22,7 @@ the icons, the wallpaper and, optionally, the login screen. Press
 | [Nord](https://www.nordtheme.com) | `#2e3440` | `#eceff4` | `#88c0d0` | `#81a1c1` | blue |
 | Redemption | `#141110` | `#e8dcc2` | `#d9181f` | `#f0882a` | red |
 | [Rosé Pine](https://rosepinetheme.com) | `#191724` | `#e0def4` | `#ebbcba` | `#c4a7e7` | pink |
-| Skyrim | `#12110f` | `#d8ccb0` | `#8fb8d8` | `#c9b88a` | blue |
+| Skyrim | `#12110f` | `#d8ccb0` | `#8fb8d8` | `#8fb8d8` | blue |
 | [Tokyo Night](https://github.com/folke/tokyonight.nvim) (night) | `#1a1b26` | `#c0caf5` | `#7aa2f7` | `#bb9af7` | blue |
 
 More themes are one TOML file each, see [Palettes](#palettes).
