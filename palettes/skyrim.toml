@@ -1,26 +1,26 @@
 name = "Skyrim"
-description = "Smoky black menus, silver type and frost blue stars, like the skill screen."
-gnome_accent = "slate"
-icon_color = ["grey", "white"]
+description = ["Khajiit has themes, if you have taste.", "Hey, you. You're finally themed."]
+gnome_accent = "blue"
+icon_color = ["blue", "nordic"]
 icon_tint = 0.2
 wallpaper = "wallpapers/skyrim/skyrim.jpg"
 
-# From tui-portfolio's skyrim-se theme; bg_alt, card_alt, the hovers and the terminal are derived.
+# From tui-portfolio's skyrim theme; bg_alt, card_alt, the hovers and the terminal are derived.
 [colors]
-bg            = "#0b0c0e"
-bg_alt        = "#070809"
-fg            = "#d9dcdf"
-surface       = "#1b1e22"
-surface_hover = "#262a2f"
-card          = "#121417"
-card_alt      = "#0f1113"
-card_hover    = "#1b1e22"
-accent        = "#c8ced6"
-accent_hover  = "#dde2e8"
-accent2       = "#a9c9e8"
-heading       = "#a9c9e8"
-muted         = "#7d848c"
+bg            = "#12110f"
+bg_alt        = "#0d0c0a"
+fg            = "#d8ccb0"
+surface       = "#26231d"
+surface_hover = "#3a352b"
+card          = "#1b1915"
+card_alt      = "#171511"
+card_hover    = "#26231d"
+accent        = "#8fb8d8"
+accent_hover  = "#a9c9e3"
+accent2       = "#c9b88a"
+heading       = "#c9b88a"
+muted         = "#9a8f78"
 
 [terminal]
-palette = ["#1B1E22", "#B5636A", "#8FAE8B", "#C8B98F", "#7F9FBF", "#A78FB8", "#8FB8C8", "#C8CED6",
-           "#3A4048", "#C97A80", "#A6C4A2", "#DCCD9F", "#A9C9E8", "#BFAACF", "#A9D0DD", "#E6E9EC"]
+palette = ["#26231D", "#B5634F", "#8FA06A", "#C9B88A", "#6F94B4", "#A5849F", "#86AFA8", "#D8CCB0",
+           "#4A4437", "#C97A63", "#A6B884", "#D8CA9F", "#8FB8D8", "#BA9DB5", "#A2C7C0", "#ECE3CF"]

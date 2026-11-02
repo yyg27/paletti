@@ -25,6 +25,7 @@ import fcntl
 import json
 import os
 import pwd
+import random
 import re
 import shutil
 import signal
@@ -627,7 +628,10 @@ def apply_icons(name):
     prune_tela()
     if message:
         print(message, file=sys.stderr)
-    body = message or palette.get("description", "")
+    description = palette.get("description", "")
+    if isinstance(description, list):  # several lines: one at random on each switch
+        description = random.choice(description) if description else ""
+    body = message or description
     if gdm_outdated():
         body += "\nLogin screen is out of date: sudo ~/.local/bin/paletti --gdm-setup"
     # Last, so it shows up once everything, icons included, has switched. This job

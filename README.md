@@ -21,7 +21,7 @@ dock, GTK apps, GNOME Terminal, the accent color and the icons. Press
 | [Nord](https://www.nordtheme.com) | `#2e3440` | `#eceff4` | `#88c0d0` | `#81a1c1` | blue |
 | Redemption | `#141110` | `#e8dcc2` | `#d9181f` | `#f0882a` | red |
 | [Rosé Pine](https://rosepinetheme.com) | `#191724` | `#e0def4` | `#ebbcba` | `#c4a7e7` | pink |
-| Skyrim | `#0b0c0e` | `#d9dcdf` | `#c8ced6` | `#a9c9e8` | slate |
+| Skyrim | `#12110f` | `#d8ccb0` | `#8fb8d8` | `#c9b88a` | blue |
 | [Tokyo Night](https://github.com/folke/tokyonight.nvim) (night) | `#1a1b26` | `#c0caf5` | `#7aa2f7` | `#bb9af7` | blue |
 
 More themes are one TOML file each, see [Palettes](#palettes).
@@ -110,7 +110,7 @@ A palette is a TOML file in `palettes/`. Adding a theme means adding one file.
 
 ```toml
 name = "Everforest"
-description = "A green based color scheme, designed to be warm and soft."   # notification text
+description = "Soft moss and pine, warm as an evergreen forest."   # notification text; a list shows one at random
 gnome_accent = "green"   # blue teal green yellow orange red pink purple slate
 vscode_theme = "Everforest Dark"   # optional: a VS Code color theme, by its name in the theme picker
 vscode_extension = "sainnhe.everforest"   # the Marketplace extension with it, installed by --install
