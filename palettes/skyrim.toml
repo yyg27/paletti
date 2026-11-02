@@ -1,9 +1,9 @@
-name = "Skyrim SE"
+name = "Skyrim"
 description = "Smoky black menus, silver type and frost blue stars, like the skill screen."
 gnome_accent = "slate"
 icon_color = ["grey", "white"]
 icon_tint = 0.2
-wallpaper = "wallpapers/skyrim-se/skyrim-se.jpg"
+wallpaper = "wallpapers/skyrim/skyrim.jpg"
 
 # From tui-portfolio's skyrim-se theme; bg_alt, card_alt, the hovers and the terminal are derived.
 [colors]

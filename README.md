@@ -21,7 +21,7 @@ dock, GTK apps, GNOME Terminal, the accent color and the icons. Press
 | [Nord](https://www.nordtheme.com) | `#2e3440` | `#eceff4` | `#88c0d0` | `#81a1c1` | blue |
 | Redemption | `#141110` | `#e8dcc2` | `#d9181f` | `#f0882a` | red |
 | [Rosé Pine](https://rosepinetheme.com) | `#191724` | `#e0def4` | `#ebbcba` | `#c4a7e7` | pink |
-| Skyrim SE | `#0b0c0e` | `#d9dcdf` | `#c8ced6` | `#a9c9e8` | slate |
+| Skyrim | `#0b0c0e` | `#d9dcdf` | `#c8ced6` | `#a9c9e8` | slate |
 | [Tokyo Night](https://github.com/folke/tokyonight.nvim) (night) | `#1a1b26` | `#c0caf5` | `#7aa2f7` | `#bb9af7` | blue |
 
 More themes are one TOML file each, see [Palettes](#palettes).
@@ -60,7 +60,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | Rosé Pine | Rosé Pine | `mvllow.rose-pine` |
 | Tokyo Night | Tokyo Night | `enkia.tokyo-night` |
 | Redemption | none, paletti's own colors | |
-| Skyrim SE | none, paletti's own colors | |
+| Skyrim | none, paletti's own colors | |
 
 `paletti --install` installs the missing ones for `code` and `codium`. A missing one
 makes VS Code fall back to its default theme.
@@ -180,7 +180,7 @@ are left unchanged with a message.
 ## Wallpapers
 
 Each palette can name a default wallpaper; it is also used for the lock screen.
-The bundled ones live in `wallpapers/`. Skyrim SE's aurora is by
+The bundled ones live in `wallpapers/`. Skyrim's aurora is by
 [Vincent Guth on Unsplash](https://unsplash.com/photos/62V7ntlKgL8).
 
 Your own wallpapers and the mode go in `~/.config/paletti/config.toml`:
