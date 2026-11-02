@@ -3,7 +3,8 @@
 Switch the whole GNOME desktop between color themes with one key.
 
 One palette file drives everything: the top bar, menus, calendar, notifications,
-dock, GTK apps, GNOME Terminal, the accent color and the icons. Press
+dock, GTK apps, GNOME Terminal, VS Code, Firefox's window buttons, the accent color,
+the icons, the wallpaper and, optionally, the login screen. Press
 <kbd>Super</kbd>+<kbd>Y</kbd> and the next palette is applied in about a second.
 
 ## Supported themes
@@ -68,7 +69,8 @@ makes VS Code fall back to its default theme.
 ## Requirements
 
 - GNOME Shell (built and tested on GNOME 51) with the **User Themes** extension
-- Python 3.11+ (standard library only)
+- Python 3.11+, standard library plus PyGObject (GdkPixbuf), `glib-compile-resources` and
+  `gtk-update-icon-cache`; all come with GNOME. They are used for PNG app icons and the login screen.
 - Optional: Dash to Dock, GNOME Terminal, Firefox, VS Code, `adw-gtk3`, Tela-circle or Papirus icons.
   Anything missing is skipped.
 
@@ -82,7 +84,9 @@ git clone <repo> ~/Projects/paletti
 `--install` links `~/.local/bin/paletti` to the script and adds two custom
 shortcuts: <kbd>Super</kbd>+<kbd>Y</kbd> (next palette) and
 <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> (next wallpaper). Existing
-shortcuts are kept. With VS Code installed it also installs the palettes' VS Code themes.
+shortcuts are kept. With VS Code installed it also installs the palettes' VS Code themes,
+and with Tela icons it builds every palette's icons in the background, so even a first
+switch is instant.
 
 ## Usage
 
@@ -93,13 +97,16 @@ paletti --list       # list palettes
 
 paletti --next-wallpaper                  # next wallpaper of the current palette
 paletti --wallpaper default|chosen|keep   # see Wallpapers
+
+sudo ~/.local/bin/paletti --gdm-setup     # login screen follows the palette, see Login screen
+sudo ~/.local/bin/paletti --gdm-remove    # login screen back to GNOME's own
 ```
 
 The **Paletti** tile in Quick Settings does the same: click it for the next
 palette, or open its menu to pick one or change the wallpaper. Each palette in the
 menu shows its accent colors as small dots.
 
-A notification shows the new theme. Shell, dock and terminal change instantly;
+A notification shows the new theme and its description. Shell, dock and terminal change instantly;
 already open apps pick up new GTK colors when reopened. Files and Terminal keep
 running in the background after their last window closes, so quit them first
 (`nautilus -q`, or close every terminal window).
@@ -159,6 +166,7 @@ Two optional roles go in `[colors]` too:
 | --- | --- | --- |
 | `icons` | Icon recoloring (folders, system apps, app icon tint) | `accent` |
 | `on_accent` | Text on accent fills (active toggles, today, accent buttons) | `bg` |
+
 Templates use `$role`, and `$role_rgb` (`40, 42, 54`) for `rgba()` values.
 
 ## Icons
@@ -167,7 +175,7 @@ paletti looks at the active icon theme and does what fits it:
 
 | Icon theme | What happens |
 | --- | --- |
-| **Tela-circle** (`Tela-circle` or `Tela-circle-dark` selected) | Each accent gets its own copy, `~/.local/share/icons/Tela-circle-paletti-<accent>-t<tint>(-dark)`, built on its first switch (~2 s) and reused after, so later switches are instant. About 33 MB each: unchanged icons are hard links into one shared base copy. Folders take the exact accent color, GNOME system app icons are fully recolored to the accent, other app icons get a light `icon_tint` toward it, or turn gray with `icon_grayscale` (`-gray` copies). Apps Tela has no icon for (found through every installed `.desktop` file, Flatpak included) get the same from their own SVG or PNG, so none keeps glaring in its own colors. Only `tela-circle-icon-theme-standard` needs to be installed. |
+| **Tela-circle** (`Tela-circle` or `Tela-circle-dark` selected) | Each accent gets its own copy, `~/.local/share/icons/Tela-circle-paletti-<accent>-t<tint>(-dark)`, built ahead by `--install` (or on its first switch, ~2 s) and reused after, so switches are instant. About 33 MB each: unchanged icons are hard links into one shared base copy. Folders take the exact accent color, GNOME system app icons are fully recolored to the accent, other app icons get a light `icon_tint` toward it, or turn gray with `icon_grayscale` (`-gray` copies). Apps Tela has no icon for (found through every installed `.desktop` file, Flatpak included) get the same from their own SVG or PNG, so none keeps glaring in its own colors. Only `tela-circle-icon-theme-standard` needs to be installed. |
 | **Papirus** (user-writable copy) | Folder symlinks are pointed at the first `icon_color` Papirus ships. |
 | **Color-variant themes** (`Tela-purple-dark`, `Colloid-Green-Dark`, ...) | Switches to the installed variant of the first `icon_color`. |
 | **Adwaita** | Nothing to do; folders follow the GNOME accent color. |
@@ -221,7 +229,8 @@ switch without a password, and a pacman hook after GNOME updates. The root
 service runs a root-owned copy of paletti in `/usr/local/share/paletti` and takes
 only the palette name from your state file, so nothing in your own checkout ever
 runs as root. The price: after changing palettes or their wallpapers, run
-`--gdm-setup` again. Your own extra wallpapers are not used on the login screen.
+`--gdm-setup` again; until then every switch shows a "Login screen is out of date"
+notification. Your own extra wallpapers are not used on the login screen.
 
 Undo everything with `sudo ~/.local/bin/paletti --gdm-remove`. If the login screen
 ever breaks, run that from a text console (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F3</kbd>),
@@ -231,8 +240,9 @@ or `sudo pacman -S gnome-shell` restores GNOME's file.
 
 A `gtk.css` paletti did not write is moved to `gtk.css.before-paletti` in
 `~/.config/gtk-3.0/` and `~/.config/gtk-4.0/`, the same for Firefox's `userChrome.css`; if that backup already exists, a
-timestamp is added to the name, so no backup is ever overwritten. The `Islands` shell theme and the
-Tela copy are generated files and are overwritten on every switch.
+timestamp is added to the name, so no backup is ever overwritten. VS Code's `settings.json`
+is copied once to `settings.json.before-paletti`. The `Islands` shell theme is a generated
+file, rewritten on every switch; the Tela copies are generated too, built once per accent and kept.
 
 ## Tests
 
@@ -240,8 +250,10 @@ Tela copy are generated files and are overwritten on every switch.
 python3 test_paletti.py
 ```
 
-Covers icon recoloring on fake icon folders, wallpapers, palette and config
-checks, and the `gtk.css` backup. The Tela test runs against the
+Covers icon recoloring on fake icon folders (Tela copies and their cleanup, apps
+Tela has no icon for), wallpapers, palette and config checks, the `gtk.css` backup,
+Firefox, VS Code settings, the Quick Settings swatches and the login screen theme
+(built from GNOME's own resource, never installed). The Tela test runs against the
 installed package, or against an extracted one with `TELA_SRC_TEST=/path/to/icons`.
 
 ## License
