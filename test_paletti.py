@@ -395,6 +395,24 @@ def test_text_editor(tmp):
         assert calls[-1] == ("gsettings", "set", "org.gnome.TextEditor", "style-scheme", f"paletti-{name}")
 
 
+def test_remind_gdm():
+    """The Update button runs --gdm-setup through pkexec; a cancelled password dialog says nothing."""
+    import subprocess
+    run = paletti.subprocess.run
+    try:
+        for clicked, code, expected in [("update", 0, "Login screen updated"), ("update", 126, None),
+                                        ("update", 1, "Login screen update failed"), ("", 0, None)]:
+            notes, ran = [], []
+            paletti.sh = lambda *cmd: notes.append(cmd[cmd.index("Paletti") + 1:]) or (clicked if "-A" in cmd else "")
+            paletti.subprocess.run = lambda cmd, **kw: ran.append(cmd) or subprocess.CompletedProcess(cmd, code, "", "boom")
+            paletti.remind_gdm()
+            assert notes[0][-2] == "Login screen is out of date"
+            assert ran == ([] if not clicked else [["pkexec", str(paletti.HOME / ".local/bin/paletti"), "--gdm-setup"]])
+            assert (notes[-1][-2] if len(notes) > 1 else None) == expected, (clicked, code, notes)
+    finally:
+        paletti.subprocess.run = run
+
+
 def test_install_vscode_themes():
     """Only missing theme extensions are installed, and only for a VS Code that exists."""
     calls = []
@@ -449,5 +467,6 @@ if __name__ == "__main__":
             test(Path(tmp))
     test_adwaita()
     test_install_vscode_themes()
+    test_remind_gdm()
     test_window_buttons()
     print("ok")

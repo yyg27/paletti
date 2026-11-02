@@ -649,9 +649,23 @@ def apply_icons(name):
     # runs detached, so the notification is the only place an icon problem is seen.
     sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"], message or description)
     if gdm_outdated():
-        # Its own notification: GNOME turns line breaks in a body into spaces.
-        sh("notify-send", "--transient", "-a", "Paletti", "-t", "6000", "Login screen is out of date",
-           "sudo ~/.local/bin/paletti --gdm-setup")
+        remind_gdm()
+
+
+def remind_gdm():
+    """A notification with an Update button: a command in a notification cannot be
+    copied. The button asks for the password in GNOME's own dialog (pkexec). Kept in
+    the notification list, so a missed one can still be clicked; this detached job
+    waits for it, and the next switch's job replaces it."""
+    action = sh("notify-send", "-a", "Paletti", "-A", "update=Update", "Login screen is out of date",
+                "Update it to the current palettes and wallpapers.")
+    if action != "update":
+        return
+    done = subprocess.run(["pkexec", str(HOME / ".local/bin/paletti"), "--gdm-setup"], capture_output=True, text=True)
+    if done.returncode == 0:
+        sh("notify-send", "--transient", "-a", "Paletti", "Login screen updated", "It shows on the next login.")
+    elif done.returncode not in (126, 127):  # 126/127: the password dialog was cancelled
+        sh("notify-send", "-a", "Paletti", "Login screen update failed", done.stderr.strip()[-200:])
 
 
 def gdm_outdated():
@@ -965,9 +979,14 @@ def apply_gdm(palette):
 
 
 def gdm_setup():
-    if os.geteuid() != 0 or os.environ.get("SUDO_USER", "root") == "root":
+    # sudo names the user in SUDO_USER, pkexec (the notification's Update button) in PKEXEC_UID.
+    if "PKEXEC_UID" in os.environ:
+        user = pwd.getpwuid(int(os.environ["PKEXEC_UID"]))
+    else:
+        user = pwd.getpwnam(os.environ["SUDO_USER"]) if os.environ.get("SUDO_USER") else None
+    if os.geteuid() != 0 or user is None or user.pw_uid == 0:
         sys.exit("Run it with sudo from your own account: sudo ~/.local/bin/paletti --gdm-setup")
-    state = Path(pwd.getpwnam(os.environ["SUDO_USER"]).pw_dir) / ".local/state/paletti/current"
+    state = Path(user.pw_dir) / ".local/state/paletti/current"
     if not GDM_ORIGINAL.exists() and gdm_patched(GDM_GRESOURCE):
         sys.exit(f"{GDM_GRESOURCE} is patched and its original is gone; reinstall gnome-shell first.")
     save_gdm_original()

@@ -231,7 +231,8 @@ service runs a root-owned copy of paletti in `/usr/local/share/paletti` and take
 only the palette name from your state file, so nothing in your own checkout ever
 runs as root. The price: after changing palettes or their wallpapers, run
 `--gdm-setup` again; until then every switch shows a "Login screen is out of date"
-notification. Your own extra wallpapers are not used on the login screen.
+notification whose **Update** button does it, asking for your password in GNOME's own
+dialog (pkexec). Your own extra wallpapers are not used on the login screen.
 
 Undo everything with `sudo ~/.local/bin/paletti --gdm-remove`. If the login screen
 ever breaks, run that from a text console (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F3</kbd>),
