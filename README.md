@@ -36,7 +36,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | GTK 3 apps (with `adw-gtk3`) | Writes `~/.config/gtk-3.0/gtk.css` from `gtk3.css` |
 | GNOME accent color | `org.gnome.desktop.interface accent-color` |
 | GNOME Terminal | Default profile colors and 16-color palette |
-| Ptyxis | A palette file per palette from `ptyxis.palette` (`~/.local/share/org.gnome.Ptyxis/palettes/paletti-<palette>.palette`), chosen in the default profile; open windows follow it right away |
+| Ptyxis | A palette file per palette from `ptyxis.palette` (`~/.local/share/org.gnome.Ptyxis/palettes/paletti-<palette>.palette`), chosen in the default profile; open windows follow it right away. A deleted palette's file goes on the next switch, the same for Text Editor |
 | Dash to Dock | Background color and running-app dots (opacity is left alone) |
 | Blur my Shell | Top bar, menu and dock blur turned off; their shapes show around paletti's |
 | Window buttons (GTK apps) | Small circles: close in the palette's red, minimize and maximize in its own accent colors |

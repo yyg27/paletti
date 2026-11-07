@@ -599,6 +599,7 @@ def apply_text_editor(name, palette):
     (SOURCEVIEW_STYLES / f"{scheme}.xml").write_text(
         render(palette, "gtksourceview.xml", scheme=scheme, name=escape(palette["name"])))
     sh("gsettings", "set", "org.gnome.TextEditor", "style-scheme", scheme)
+    remove_generated(SOURCEVIEW_STYLES, ".xml", keep=names())
 
 
 def apply_ptyxis(name, palette):
@@ -611,6 +612,14 @@ def apply_ptyxis(name, palette):
     (PTYXIS_PALETTES / f"paletti-{name}.palette").write_text(render(palette, "ptyxis.palette"))
     sh("gsettings", "set", f"org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/{profile}/",
        "palette", f"paletti-{name}")
+    remove_generated(PTYXIS_PALETTES, ".palette", keep=names())
+
+
+def remove_generated(folder, suffix, keep=()):
+    """paletti-<palette><suffix> files, except those of the palettes in keep."""
+    for path in folder.glob(f"paletti-*{suffix}"):
+        if path.name.removeprefix("paletti-").removesuffix(suffix) not in keep:
+            path.unlink()
 
 
 def write_generated(target, text):

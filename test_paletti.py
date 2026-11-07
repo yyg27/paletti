@@ -429,6 +429,9 @@ def test_ptyxis(tmp):
     paletti.apply_ptyxis("nord", paletti.load("nord"))
     assert not paletti.PTYXIS_PALETTES.exists()
     paletti.sh = lambda *cmd: calls.append(cmd) or ("'abc'" if cmd[1] == "get" else "")
+    paletti.PTYXIS_PALETTES.mkdir()
+    (paletti.PTYXIS_PALETTES / "paletti-deleted.palette").write_text("")  # a palette that is gone
+    (paletti.PTYXIS_PALETTES / "mine.palette").write_text("")
     for name in paletti.names():
         palette = paletti.load(name)
         paletti.apply_ptyxis(name, palette)
@@ -441,6 +444,8 @@ def test_ptyxis(tmp):
             assert [keyfile[variant][f"Color{i}"] for i in range(16)] == palette["terminal"]["palette"]
         assert calls[-1] == ("gsettings", "set", "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/abc/",
                              "palette", f"paletti-{name}")
+    assert sorted(p.name for p in paletti.PTYXIS_PALETTES.iterdir()) == sorted(
+        [f"paletti-{name}.palette" for name in paletti.names()] + ["mine.palette"])
 
 
 def test_text_editor(tmp):
