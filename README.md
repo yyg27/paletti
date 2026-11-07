@@ -34,6 +34,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | Top bar, quick settings, calendar, menus, dialogs, OSD, Alt+Tab, notifications | Generates an `Islands` GNOME Shell theme from `shell.css` (island-style top bar) |
 | GTK 4 / libadwaita apps | Writes `~/.config/gtk-4.0/gtk.css` from `gtk4.css` |
 | GTK 3 apps (with `adw-gtk3`) | Writes `~/.config/gtk-3.0/gtk.css` from `gtk3.css` |
+| Flatpak apps | `--install` shares both `gtk.css` folders with them, read-only (`flatpak override --user --filesystem=xdg-config/gtk-4.0:ro`, the same for gtk-3.0), so they get the same colors |
 | GNOME accent color | `org.gnome.desktop.interface accent-color` |
 | GNOME Terminal | Default profile colors and 16-color palette |
 | Ptyxis | A palette file per palette from `ptyxis.palette` (`~/.local/share/org.gnome.Ptyxis/palettes/paletti-<palette>.palette`), chosen in the default profile; open windows follow it right away. A deleted palette's file goes on the next switch, the same for Text Editor |

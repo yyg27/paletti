@@ -102,6 +102,8 @@ TRANSITION_MS = (350, 800)
 
 KEYBINDING_SCHEMA = "org.gnome.settings-daemon.plugins.media-keys"
 KEYBINDING_PATH = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/paletti/"
+# Flatpak apps read GTK colors only from folders shared into their sandbox.
+FLATPAK_GTK = ["xdg-config/gtk-3.0", "xdg-config/gtk-4.0"]
 
 
 def names():
@@ -899,6 +901,9 @@ def install():
     print(f"Installed: {link}, shortcuts Super+Y (theme) and Super+Shift+Y (wallpaper)")
     print(f"Extension {EXTENSION_UUID} enabled; log out and back in once for the screen transition.")
     install_vscode_themes()
+    if shutil.which("flatpak"):
+        sh("flatpak", "override", "--user", *(f"--filesystem={path}:ro" for path in FLATPAK_GTK))
+        print("Flatpak apps can read the GTK colors now.")
     subprocess.Popen([sys.executable, str(SCRIPT), "--prebuild-icons"],
                      start_new_session=True, stdout=subprocess.DEVNULL)
     print("Building every palette's icons in the background, so even first switches are instant.")
