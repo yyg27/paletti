@@ -38,7 +38,8 @@ from pathlib import Path
 from string import Template
 from xml.sax.saxutils import escape
 
-HERE = Path(__file__).resolve().parent
+SCRIPT = Path(__file__).resolve()  # once, at start: --install replaces the ~/.local/bin link it may run through
+HERE = SCRIPT.parent
 PALETTES = HERE / "palettes"
 HOME = Path.home()
 EXTENSIONS = HOME / ".local/share/gnome-shell/extensions"
@@ -627,7 +628,7 @@ def start_icons(name):
             os.killpg(pid, signal.SIGTERM)  # its own group (start_new_session): the reminder's notify-send goes too
     except (FileNotFoundError, ValueError, ProcessLookupError, PermissionError):
         pass
-    job = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--icons", name],
+    job = subprocess.Popen([sys.executable, str(SCRIPT), "--icons", name],
                            start_new_session=True, stdout=subprocess.DEVNULL)
     ICONS_PID.write_text(str(job.pid))
 
@@ -837,7 +838,7 @@ def install():
     if link.is_symlink():  # re-pointed, so a moved checkout keeps working
         link.unlink()
     if not link.exists():
-        link.symlink_to(Path(__file__).resolve())
+        link.symlink_to(SCRIPT)
 
     # The transition extension. A newly installed extension loads after logging
     # out and back in, so it is enabled through gsettings.
@@ -866,7 +867,7 @@ def install():
     print(f"Installed: {link}, shortcuts Super+Y (theme) and Super+Shift+Y (wallpaper)")
     print(f"Extension {EXTENSION_UUID} enabled; log out and back in once for the screen transition.")
     install_vscode_themes()
-    subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--prebuild-icons"],
+    subprocess.Popen([sys.executable, str(SCRIPT), "--prebuild-icons"],
                      start_new_session=True, stdout=subprocess.DEVNULL)
     print("Building every palette's icons in the background, so even first switches are instant.")
     install_gdm()
@@ -879,7 +880,7 @@ def install_gdm():
         return
     print("Setting up the login screen, this asks for your password once.")
     if subprocess.run(["pkexec", str(HOME / ".local/bin/paletti"), "--gdm-setup"]).returncode in (126, 127):
-        print("Login screen skipped (password dialog cancelled); later: sudo ~/.local/bin/paletti --gdm-setup")
+        print("Login screen not set up; later: sudo ~/.local/bin/paletti --gdm-setup")
 
 
 def prebuild_icons():
