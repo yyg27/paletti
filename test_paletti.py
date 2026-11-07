@@ -150,6 +150,9 @@ def test_other_apps(icons):
         (variant / "index.theme").write_text("[Icon Theme]\nName=test\nDirectories=scalable/apps\n\n"
                                              "[scalable/apps]\nSize=16\nType=Scalable\n")
     saved = {k: os.environ.get(k) for k in ("XDG_DATA_HOME", "XDG_DATA_DIRS")}
+    # No system apps, but the MIME database: Ubuntu's GdkPixbuf finds PNGs through it.
+    (icons / "none").mkdir()
+    (icons / "none/mime").symlink_to("/usr/share/mime")
     os.environ.update(XDG_DATA_HOME=str(data), XDG_DATA_DIRS=str(icons / "none"))
     try:
         paletti.recolor_other_apps(theme, "#e6e6e6", 0.0, grayscale=True)  # Monochrome
