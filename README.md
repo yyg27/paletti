@@ -230,7 +230,7 @@ their lock screen look as before. A systemd path unit redoes it on every palette
 switch without a password, and a pacman hook after GNOME updates. The root
 service runs a root-owned copy of paletti in `/usr/local/share/paletti` and takes
 only the palette name from your state file, so nothing in your own checkout ever
-runs as root. The price: after changing palettes or their wallpapers, run
+runs as root. The price: after changing palettes, their wallpapers or paletti itself, run
 `--gdm-setup` again; until then every switch shows a "Login screen is out of date"
 notification whose **Update** button does it, asking for your password in GNOME's own
 dialog (pkexec). Your own extra wallpapers are not used on the login screen.

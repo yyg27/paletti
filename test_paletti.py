@@ -385,9 +385,28 @@ def test_gdm_outdated(tmp):
         assert not paletti.gdm_outdated()
         (paletti.HERE / "palettes/b.toml").write_text("new palette")
         assert paletti.gdm_outdated()
+        (paletti.GDM_HOME / "palettes/b.toml").write_text("new palette")
+        (paletti.HERE / "paletti.py").write_text("newer code")  # the root copy runs paletti too
+        assert paletti.gdm_outdated()
     finally:
         paletti.GDM_HOME, paletti.HERE = saved
     assert paletti.GDM_HOME == home
+
+
+def test_stale_reminder(tmp):
+    """A reminder left from before the login screen got updated is closed on the next switch."""
+    calls = []
+    paletti.sh = lambda *cmd: calls.append(cmd) or ""
+    outdated, recolor = paletti.gdm_outdated, paletti.recolor_icons
+    paletti.gdm_outdated, paletti.recolor_icons = (lambda: False), (lambda *args: None)
+    paletti.GDM_NOTICE = tmp / "gdm-notice"
+    paletti.GDM_NOTICE.write_text("42")
+    try:
+        paletti.apply_icons("nord")
+    finally:
+        paletti.gdm_outdated, paletti.recolor_icons = outdated, recolor
+    assert calls[-1][-2:] == ("org.freedesktop.Notifications.CloseNotification", "42")
+    assert not paletti.GDM_NOTICE.exists()
 
 
 def test_text_editor(tmp):
@@ -513,7 +532,7 @@ if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
                  test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup, test_swatches, test_gdm,
                  test_other_apps, test_gdm_outdated, test_text_editor,
-                 test_vscode, test_install_gdm]:
+                 test_vscode, test_install_gdm, test_stale_reminder]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
             paletti.FIREFOX_DIRS = [Path(tmp) / "firefox"]  # apply never touches the real profile

@@ -666,6 +666,12 @@ def apply_icons(name):
     sh("notify-send", "--transient", "-a", "Paletti", "-t", "3000", palette["name"], message or description)
     if gdm_outdated():
         remind_gdm()
+    elif GDM_NOTICE.exists():  # updated meanwhile: an old reminder's button has nothing left to do
+        if GDM_NOTICE.read_text().isdigit():
+            sh("gdbus", "call", "--session", "--dest", "org.freedesktop.Notifications",
+               "--object-path", "/org/freedesktop/Notifications",
+               "--method", "org.freedesktop.Notifications.CloseNotification", GDM_NOTICE.read_text())
+        GDM_NOTICE.unlink()
 
 
 def remind_gdm():
@@ -690,15 +696,15 @@ def remind_gdm():
 
 def gdm_outdated():
     """True when --gdm-setup ran but its root copy no longer has the current palettes,
-    wallpapers or login screen stylesheet. Without the setup it never nags."""
+    wallpapers, login screen stylesheet or paletti itself. Without the setup it never nags."""
     if not GDM_HOME.is_dir():
         return False
 
     def snapshot(root):
         files = [p for folder in ["palettes", "wallpapers"] for p in (root / folder).rglob("*") if p.is_file()]
-        files += [root / "gdm.css"] if (root / "gdm.css").is_file() else []
+        files += [root / name for name in ("gdm.css", "paletti.py") if (root / name).is_file()]
         # Text files by content, images by size: reading every wallpaper on each switch is too slow.
-        return {str(p.relative_to(root)): p.read_bytes() if p.suffix in (".toml", ".css") else p.stat().st_size
+        return {str(p.relative_to(root)): p.read_bytes() if p.suffix in (".toml", ".css", ".py") else p.stat().st_size
                 for p in files}
     try:
         return snapshot(HERE) != snapshot(GDM_HOME)
