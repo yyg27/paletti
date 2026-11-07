@@ -78,8 +78,7 @@ makes VS Code fall back to its default theme.
 ## Install
 
 ```sh
-git clone <repo> ~/Projects/paletti
-~/Projects/paletti/paletti.py --install
+git clone https://github.com/yyg27/paletti.git ~/Projects/paletti && ~/Projects/paletti/paletti.py --install
 ```
 
 `--install` links `~/.local/bin/paletti` to the script and adds two custom
