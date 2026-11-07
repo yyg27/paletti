@@ -36,6 +36,7 @@ More themes are one TOML file each, see [Palettes](#palettes).
 | GTK 3 apps (with `adw-gtk3`) | Writes `~/.config/gtk-3.0/gtk.css` from `gtk3.css` |
 | GNOME accent color | `org.gnome.desktop.interface accent-color` |
 | GNOME Terminal | Default profile colors and 16-color palette |
+| Ptyxis | A palette file per palette from `ptyxis.palette` (`~/.local/share/org.gnome.Ptyxis/palettes/paletti-<palette>.palette`), chosen in the default profile; open windows follow it right away |
 | Dash to Dock | Background color and running-app dots (opacity is left alone) |
 | Blur my Shell | Top bar, menu and dock blur turned off; their shapes show around paletti's |
 | Window buttons (GTK apps) | Small circles: close in the palette's red, minimize and maximize in its own accent colors |
@@ -72,7 +73,7 @@ makes VS Code fall back to its default theme.
 - GNOME Shell (built and tested on GNOME 51) with the **User Themes** extension
 - Python 3.11+, standard library plus PyGObject (GdkPixbuf), `glib-compile-resources` and
   `gtk-update-icon-cache`; all come with GNOME. They are used for PNG app icons and the login screen.
-- Optional: Dash to Dock, GNOME Terminal, Firefox, VS Code, `adw-gtk3`, Tela-circle or Papirus icons.
+- Optional: Dash to Dock, GNOME Terminal, Ptyxis, Firefox, VS Code, `adw-gtk3`, Tela-circle or Papirus icons.
   Anything missing is skipped.
 
 ## Install

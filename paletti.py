@@ -67,6 +67,7 @@ GTK_CSS = {"gtk4.css": HOME / ".config/gtk-4.0/gtk.css",
 FIREFOX_DIRS = [HOME / ".config/mozilla/firefox", HOME / ".mozilla/firefox"]  # newer and older location
 VSCODE_DIRS = [HOME / ".config/Code/User", HOME / ".config/VSCodium/User", HOME / ".config/Code - OSS/User"]
 SOURCEVIEW_STYLES = HOME / ".local/share/gtksourceview-5/styles"  # GNOME Text Editor's color schemes
+PTYXIS_PALETTES = HOME / ".local/share/org.gnome.Ptyxis/palettes"
 
 ROLES = ["bg", "bg_alt", "fg", "surface", "surface_hover", "card", "card_alt", "card_hover",
          "accent", "accent_hover", "accent2", "heading", "muted"]
@@ -500,6 +501,7 @@ def apply(name):
 
     apply_vscode(palette)
     apply_text_editor(name, palette)
+    apply_ptyxis(name, palette)
     apply_wallpaper(name, palette)
 
     # GNOME Terminal default profile.
@@ -597,6 +599,18 @@ def apply_text_editor(name, palette):
     (SOURCEVIEW_STYLES / f"{scheme}.xml").write_text(
         render(palette, "gtksourceview.xml", scheme=scheme, name=escape(palette["name"])))
     sh("gsettings", "set", "org.gnome.TextEditor", "style-scheme", scheme)
+
+
+def apply_ptyxis(name, palette):
+    """Ptyxis, GNOME's newer terminal: a palette file per palette, chosen in the default
+    profile. Ptyxis watches its palettes folder, so open windows change right away."""
+    profile = sh("gsettings", "get", "org.gnome.Ptyxis", "default-profile-uuid").strip("'")
+    if not profile:
+        return  # Ptyxis is not installed (or never started, so it has no profile yet)
+    PTYXIS_PALETTES.mkdir(parents=True, exist_ok=True)
+    (PTYXIS_PALETTES / f"paletti-{name}.palette").write_text(render(palette, "ptyxis.palette"))
+    sh("gsettings", "set", f"org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/{profile}/",
+       "palette", f"paletti-{name}")
 
 
 def write_generated(target, text):

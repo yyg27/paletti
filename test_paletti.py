@@ -417,6 +417,29 @@ def test_stale_reminder(tmp):
     assert not paletti.GDM_NOTICE.exists()
 
 
+def test_ptyxis(tmp):
+    """Each palette gets a Ptyxis palette file, chosen in the default profile; no Ptyxis, no files."""
+    import configparser
+    calls = []
+    paletti.PTYXIS_PALETTES = tmp / "palettes"
+    paletti.sh = lambda *cmd: calls.append(cmd) or ""
+    paletti.apply_ptyxis("nord", paletti.load("nord"))
+    assert not paletti.PTYXIS_PALETTES.exists()
+    paletti.sh = lambda *cmd: calls.append(cmd) or ("'abc'" if cmd[1] == "get" else "")
+    for name in paletti.names():
+        palette = paletti.load(name)
+        paletti.apply_ptyxis(name, palette)
+        keyfile = configparser.ConfigParser(interpolation=None)
+        keyfile.optionxform = str
+        keyfile.read(paletti.PTYXIS_PALETTES / f"paletti-{name}.palette")
+        assert keyfile["Palette"]["Name"] == f"{palette['name']} (paletti)"
+        for variant in ["Light", "Dark"]:
+            assert keyfile[variant]["Background"] == palette["colors"]["bg"]
+            assert [keyfile[variant][f"Color{i}"] for i in range(16)] == palette["terminal"]["palette"]
+        assert calls[-1] == ("gsettings", "set", "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/abc/",
+                             "palette", f"paletti-{name}")
+
+
 def test_text_editor(tmp):
     """Every palette's scheme loads in GtkSourceView with the palette's colors, and is chosen by id."""
     import gi
@@ -540,12 +563,13 @@ if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
                  test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup, test_swatches, test_gdm,
                  test_other_apps, test_gdm_outdated, test_text_editor,
-                 test_vscode, test_install_gdm, test_stale_reminder]:
+                 test_vscode, test_install_gdm, test_stale_reminder, test_ptyxis]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
             paletti.FIREFOX_DIRS = [Path(tmp) / "firefox"]  # apply never touches the real profile
             paletti.VSCODE_DIRS = [Path(tmp) / "vscode"]  # nor the real VS Code settings
             paletti.SOURCEVIEW_STYLES = Path(tmp) / "styles"  # nor Text Editor's schemes
+            paletti.PTYXIS_PALETTES = Path(tmp) / "ptyxis"  # nor Ptyxis' palettes
             paletti.ICON_THEME_SWAP = Path(tmp) / "icon-theme"
             test(Path(tmp))
     test_adwaita()
