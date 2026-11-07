@@ -444,6 +444,31 @@ def test_remind_gdm():
             paletti.subprocess.run, paletti.subprocess.Popen = run, popen
 
 
+def test_install_gdm(tmp):
+    """--install sets up the login screen through pkexec, unless it is missing or already current."""
+    import subprocess
+    run, outdated = paletti.subprocess.run, paletti.gdm_outdated
+    resource, home = paletti.GDM_GRESOURCE, paletti.GDM_HOME
+    try:
+        paletti.GDM_GRESOURCE, paletti.GDM_HOME = tmp / "theme.gresource", tmp / "root-copy"
+        for exists, set_up, stale, asked in [(False, False, False, False), (True, False, False, True),
+                                             (True, True, False, False), (True, True, True, True)]:
+            ran = []
+            paletti.GDM_GRESOURCE.unlink(missing_ok=True)
+            shutil.rmtree(paletti.GDM_HOME, ignore_errors=True)
+            if exists:
+                paletti.GDM_GRESOURCE.touch()
+            if set_up:
+                paletti.GDM_HOME.mkdir()
+            paletti.gdm_outdated = lambda: stale
+            paletti.subprocess.run = lambda cmd, **kw: ran.append(cmd) or subprocess.CompletedProcess(cmd, 126)
+            paletti.install_gdm()
+            assert ran == ([["pkexec", str(paletti.HOME / ".local/bin/paletti"), "--gdm-setup"]] if asked else [])
+    finally:
+        paletti.subprocess.run, paletti.gdm_outdated = run, outdated
+        paletti.GDM_GRESOURCE, paletti.GDM_HOME = resource, home
+
+
 def test_install_vscode_themes():
     """Only missing theme extensions are installed, and only for a VS Code that exists."""
     calls = []
@@ -488,7 +513,7 @@ if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
                  test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup, test_swatches, test_gdm,
                  test_other_apps, test_gdm_outdated, test_text_editor,
-                 test_vscode]:
+                 test_vscode, test_install_gdm]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
             paletti.FIREFOX_DIRS = [Path(tmp) / "firefox"]  # apply never touches the real profile

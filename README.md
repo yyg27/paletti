@@ -4,7 +4,7 @@ Switch the whole GNOME desktop between color themes with one key.
 
 One palette file drives everything: the top bar, menus, calendar, notifications,
 dock, GTK apps, GNOME Terminal, VS Code, Firefox's window buttons, the accent color,
-the icons, the wallpaper and, optionally, the login screen. Press
+the icons, the wallpaper and the login screen. Press
 <kbd>Super</kbd>+<kbd>Y</kbd> and the next palette is applied in about a second.
 
 ## Supported themes
@@ -86,7 +86,8 @@ shortcuts: <kbd>Super</kbd>+<kbd>Y</kbd> (next palette) and
 <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> (next wallpaper). Existing
 shortcuts are kept. With VS Code installed it also installs the palettes' VS Code themes,
 and with Tela icons it builds every palette's icons in the background, so even a first
-switch is instant.
+switch is instant. Last, it sets up the [login screen](#login-screen-gdm), asking for your
+password once; cancel the dialog to skip it.
 
 ## Usage
 
@@ -215,7 +216,8 @@ rewrites the config file, so comments added by hand are not kept.
 
 The login screen can follow the palette too: its wallpaper (blurred and darkened
 toward the palette background), Islands top bar, user list, password field and
-buttons. It needs root once:
+buttons. It needs root once; `--install` does it after asking for your password,
+or run it yourself:
 
 ```sh
 sudo ~/.local/bin/paletti --gdm-setup

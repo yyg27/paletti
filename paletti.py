@@ -869,6 +869,17 @@ def install():
     subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--prebuild-icons"],
                      start_new_session=True, stdout=subprocess.DEVNULL)
     print("Building every palette's icons in the background, so even first switches are instant.")
+    install_gdm()
+
+
+def install_gdm():
+    """The login screen follows the palette too, after GNOME's own password dialog
+    (pkexec). Skipped without GNOME's theme resource, or when already set up and current."""
+    if not GDM_GRESOURCE.exists() or (GDM_HOME.is_dir() and not gdm_outdated()):
+        return
+    print("Setting up the login screen, this asks for your password once.")
+    if subprocess.run(["pkexec", str(HOME / ".local/bin/paletti"), "--gdm-setup"]).returncode in (126, 127):
+        print("Login screen skipped (password dialog cancelled); later: sudo ~/.local/bin/paletti --gdm-setup")
 
 
 def prebuild_icons():
