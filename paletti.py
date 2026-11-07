@@ -556,15 +556,19 @@ def apply_vscode(palette):
         backup = target.with_name("settings.json.before-paletti")
         if not backup.exists():
             shutil.copy2(target, backup)
-        colors = settings.setdefault("workbench.colorCustomizations", {})
-        tokens = settings.setdefault("editor.tokenColorCustomizations", {})
-        semantic = settings.setdefault("editor.semanticTokenColorCustomizations", {})
-        for section, old in [(colors, legacy["colors"]), (semantic.get("rules", {}), legacy["semantic"])]:
+        sections = ["workbench.colorCustomizations", "editor.tokenColorCustomizations",
+                    "editor.semanticTokenColorCustomizations"]
+        for key in sections:  # a null or otherwise odd value would stop the switch halfway
+            if not isinstance(settings.get(key), dict):
+                settings[key] = {}
+        colors, tokens, semantic = (settings[key] for key in sections)
+        rules = semantic.get("rules")
+        for section, old in [(colors, legacy["colors"]), (rules if isinstance(rules, dict) else {}, legacy["semantic"])]:
             for key in [k for k, v in old.items() if section.get(k) == v]:
                 del section[key]
-        if "textMateRules" in tokens:
+        if isinstance(tokens.get("textMateRules"), list):
             tokens["textMateRules"] = [r for r in tokens["textMateRules"]
-                                       if not str(r.get("name", "")).startswith("paletti:")]
+                                       if not (isinstance(r, dict) and str(r.get("name", "")).startswith("paletti:"))]
         for section, mine in [(colors, ours["colors"]), (tokens, {"textMateRules": ours["tokens"]}),
                               (semantic, {"enabled": True, "rules": ours["semantic"]})]:
             section.pop(scope, None)
@@ -575,8 +579,7 @@ def apply_vscode(palette):
         for section, inner in [(tokens, "textMateRules"), (semantic, "rules")]:
             if inner in section and not section[inner]:
                 del section[inner]
-        for key in ["workbench.colorCustomizations", "editor.tokenColorCustomizations",
-                    "editor.semanticTokenColorCustomizations"]:
+        for key in sections:
             if not settings[key]:
                 del settings[key]
         tmp = target.with_name(".settings.json.paletti")

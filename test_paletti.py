@@ -325,6 +325,14 @@ def test_vscode(tmp):
     assert result["editor.tokenColorCustomizations"] == {"textMateRules": [mine]}
     assert result["editor.semanticTokenColorCustomizations"] == {"enabled": True}
 
+    # Null sections (hand-edited) are taken as empty instead of stopping the switch.
+    settings.write_text(json.dumps({**user, "workbench.colorCustomizations": None,
+                                    "editor.tokenColorCustomizations": {"textMateRules": None}}))
+    paletti.apply_vscode(redemption)
+    result = json.loads(settings.read_text())
+    assert list(result["workbench.colorCustomizations"]) == [scope]
+    assert list(result["editor.tokenColorCustomizations"]) == [scope]
+
 
 def test_swatches(tmp):
     """Every palette has accent swatches; a broken file gets none instead of breaking the menu."""
