@@ -49,6 +49,7 @@ ICONS_PID = HOME / ".local/state/paletti/icons.pid"
 ICON_THEME_SWAP = HOME / ".local/state/paletti/icon-theme"  # exists only mid set_icon_theme
 CONFIG = HOME / ".config/paletti/config.toml"
 CHOSEN_WALLPAPER = HOME / ".local/state/paletti/wallpaper"  # one file per palette
+GDM_NOTICE = HOME / ".local/state/paletti/gdm-notice"  # id of the login screen reminder, replaced by the next one
 WALLPAPER_MODES = ("default", "chosen", "keep")
 
 # GDM: GNOME's theme resource gets gdm.css appended, by a root service that only
@@ -116,6 +117,10 @@ def load(name):
     problems += [f"missing color role {role}" for role in ROLES if role not in colors]
     problems += [f"{role} = {value!r} is not #rrggbb" for role, value in colors.items()
                  if not HEX_COLOR.fullmatch(str(value))]
+    problems += [f"{key} must be {kind}" for key, types, kind in [
+        ("icon_tint", (int, float), "a number"), ("icon_grayscale", bool, "true or false"),
+        ("wallpaper", str, "a path in quotes"), ("vscode_theme", str, "a name in quotes")]
+        if key in palette and not isinstance(palette[key], types)]
     if len(terminal) != 16 or not all(HEX_COLOR.fullmatch(str(value)) for value in terminal):
         problems.append("[terminal] palette needs 16 #rrggbb colors")
     if problems:
@@ -177,6 +182,11 @@ def gray(hex_color):
     """hex_color (no #) as the gray of its own brightness, so icon shapes stay readable."""
     level = round(sum(w * int(hex_color[i:i + 2], 16) for w, i in ((0.299, 0), (0.587, 2), (0.114, 4))))
     return f"{level:02x}" * 3
+
+
+def app_recolor(accent, tint, grayscale):
+    """App icon colors: every color as its own gray, or a light tint toward the accent."""
+    return gray if grayscale else lambda h: mix(h, accent, tint)
 
 
 def tela_name(accent, tint, grayscale=False):
@@ -261,7 +271,7 @@ def build_tela(accent, tint=0.0, grayscale=False):
         # App icons: a light tint toward the accent, or every color as its own gray.
         apps = src / "scalable/apps"
         if (tint or grayscale) and apps.is_dir() and apps.resolve().is_relative_to(src.resolve()):  # -dark links it to the base
-            recolor = (lambda h: gray(h)) if grayscale else (lambda h: mix(h, accent, tint))
+            recolor = app_recolor(accent, tint, grayscale)
             for source in apps.glob("*.svg"):
                 if source.is_symlink():
                     continue
@@ -350,8 +360,8 @@ def recolor_other_apps(theme, accent, tint, grayscale):
     are picked up; GTK's icon cache is only redone when an icon changed."""
     if not (tint or grayscale):
         return
-    recolor = (lambda h: gray(h)) if grayscale else (lambda h: mix(h, accent, tint))
-    tela = {p.stem for p in (TELA_SRC / "Tela-circle").rglob("*.svg")}  # any size or context
+    recolor = app_recolor(accent, tint, grayscale)
+    tela ={p.stem for p in (TELA_SRC / "Tela-circle").rglob("*.svg")}  # any size or context
     changed = False
     # Symbolic icons are drawn in the text color by GTK already.
     for name in sorted(n for n in app_icon_names() - tela if not n.endswith("-symbolic")):
@@ -520,10 +530,16 @@ def apply_vscode(palette):
     """Sets VS Code's color theme in settings.json, which VS Code reloads by itself.
     A palette with a ready-made VS Code theme (vscode_theme) just switches to it;
     one without gets the built-in dark theme with paletti's interface and syntax
-    colors on top. The user's other settings, colors and token rules stay; the
-    original is backed up once."""
+    colors, scoped to that theme only, so the user's own colors and token rules are
+    never touched. The original is backed up once."""
     ours = json.loads(render(palette, "vscode.json"))
     theme = palette.get("vscode_theme")
+    scope = "[Default Dark Modern]"
+    # Older versions wrote paletti's colors unscoped; the previous palette's are taken out once.
+    try:
+        legacy = json.loads(render(tomllib.loads((PALETTES / f"{saved_name()}.toml").read_text()), "vscode.json"))
+    except (OSError, KeyError, TypeError, ValueError):  # no or a broken previous palette
+        legacy = {"colors": {}, "semantic": {}}
     for folder in VSCODE_DIRS:
         target = folder / "settings.json"
         if not target.exists():
@@ -539,26 +555,25 @@ def apply_vscode(palette):
         backup = target.with_name("settings.json.before-paletti")
         if not backup.exists():
             shutil.copy2(target, backup)
-        # An earlier palette's colors go first, so a ready-made theme shows as it was made.
-        colors = {k: v for k, v in settings.get("workbench.colorCustomizations", {}).items() if k not in ours["colors"]}
-        tokens = settings.get("editor.tokenColorCustomizations", {})
-        rules = [r for r in tokens.get("textMateRules", []) if not str(r.get("name", "")).startswith("paletti:")]
-        semantic = settings.get("editor.semanticTokenColorCustomizations", {})
-        semantic_rules = {k: v for k, v in semantic.get("rules", {}).items() if k not in ours["semantic"]}
-        if not theme:
-            colors.update(ours["colors"])
-            rules = ours["tokens"] + rules  # the user's own rules come after, so they win
-            semantic_rules.update(ours["semantic"])
-            semantic.setdefault("enabled", True)  # the rules only apply with semantic highlighting on
+        colors = settings.setdefault("workbench.colorCustomizations", {})
+        tokens = settings.setdefault("editor.tokenColorCustomizations", {})
+        semantic = settings.setdefault("editor.semanticTokenColorCustomizations", {})
+        for section, old in [(colors, legacy["colors"]), (semantic.get("rules", {}), legacy["semantic"])]:
+            for key in [k for k, v in old.items() if section.get(k) == v]:
+                del section[key]
+        if "textMateRules" in tokens:
+            tokens["textMateRules"] = [r for r in tokens["textMateRules"]
+                                       if not str(r.get("name", "")).startswith("paletti:")]
+        for section, mine in [(colors, ours["colors"]), (tokens, {"textMateRules": ours["tokens"]}),
+                              (semantic, {"enabled": True, "rules": ours["semantic"]})]:
+            section.pop(scope, None)
+            if not theme:
+                section[scope] = mine
         settings["workbench.colorTheme"] = theme or "Default Dark Modern"
-        settings["workbench.colorCustomizations"] = colors
-        settings["editor.tokenColorCustomizations"] = {**tokens, "textMateRules": rules}
-        settings["editor.semanticTokenColorCustomizations"] = {**semantic, "rules": semantic_rules}
         # Whatever ends up empty is dropped, so the file stays as the user wrote it.
-        for key, inner in [("editor.tokenColorCustomizations", "textMateRules"),
-                           ("editor.semanticTokenColorCustomizations", "rules")]:
-            if not settings[key][inner]:
-                del settings[key][inner]
+        for section, inner in [(tokens, "textMateRules"), (semantic, "rules")]:
+            if inner in section and not section[inner]:
+                del section[inner]
         for key in ["workbench.colorCustomizations", "editor.tokenColorCustomizations",
                     "editor.semanticTokenColorCustomizations"]:
             if not settings[key]:
@@ -609,7 +624,7 @@ def start_icons(name):
         pid = int(ICONS_PID.read_text())
         # Only stop it if that pid is still our job; pids get reused by other programs.
         if b"--icons" in Path(f"/proc/{pid}/cmdline").read_bytes():
-            os.kill(pid, signal.SIGTERM)
+            os.killpg(pid, signal.SIGTERM)  # its own group (start_new_session): the reminder's notify-send goes too
     except (FileNotFoundError, ValueError, ProcessLookupError, PermissionError):
         pass
     job = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--icons", name],
@@ -656,10 +671,14 @@ def remind_gdm():
     """A notification with an Update button: a command in a notification cannot be
     copied. The button asks for the password in GNOME's own dialog (pkexec). Kept in
     the notification list, so a missed one can still be clicked; this detached job
-    waits for it, and the next switch's job replaces it."""
-    action = sh("notify-send", "-a", "Paletti", "-A", "update=Update", "Login screen is out of date",
-                "Update it to the current palettes and wallpapers.")
-    if action != "update":
+    waits for it, and the next switch's job replaces it by its id. The id is saved
+    before waiting, since a newer switch stops this job mid-wait."""
+    old = GDM_NOTICE.read_text() if GDM_NOTICE.exists() else ""
+    notice = subprocess.Popen(["notify-send", "-p", *(["-r", old] if old.isdigit() else []), "-a", "Paletti",
+                               "-A", "update=Update", "Login screen is out of date",
+                               "Update it to the current palettes and wallpapers."], stdout=subprocess.PIPE, text=True)
+    GDM_NOTICE.write_text(notice.stdout.readline().strip())
+    if notice.communicate()[0].strip() != "update":
         return
     done = subprocess.run(["pkexec", str(HOME / ".local/bin/paletti"), "--gdm-setup"], capture_output=True, text=True)
     if done.returncode == 0:

@@ -225,12 +225,12 @@ def test_window_buttons():
 def test_broken_palette(tmp):
     paletti.sh = lambda *cmd: ""
     paletti.PALETTES = tmp
-    (tmp / "broken.toml").write_text('name = "Broken"\n[colors]\nbg = "#fff"\n')
+    (tmp / "broken.toml").write_text('name = "Broken"\nicon_tint = "0.2"\n[colors]\nbg = "#fff"\n')
     try:
         paletti.load("broken")
         raise AssertionError("broken palette was accepted")
     except SystemExit as e:
-        for problem in ["gnome_accent", "bg_alt", "'#fff'", "16"]:
+        for problem in ["gnome_accent", "bg_alt", "'#fff'", "16", "icon_tint must be a number"]:
             assert problem in str(e), (problem, str(e))
     finally:
         paletti.PALETTES = paletti.HERE / "palettes"
@@ -275,15 +275,18 @@ def test_firefox(tmp):
 
 def test_vscode(tmp):
     """A ready-made theme is switched to; a palette without one gets paletti's colors,
-    which go again on the next switch. The user's settings stay, a JSONC file is left alone."""
+    scoped to its theme, which go again on the next switch. The user's settings, even
+    the same color keys, stay; a JSONC file is left alone."""
     paletti.sh = lambda *cmd: ""
+    paletti.STATE = tmp / "current"  # no previous palette
     code, codium = tmp / "Code/User", tmp / "VSCodium/User"
     code.mkdir(parents=True)
     codium.mkdir(parents=True)
     paletti.VSCODE_DIRS = [code, codium]
     settings = code / "settings.json"
     mine = {"name": "my strings", "scope": "string", "settings": {"foreground": "#123456"}}
-    user = {"editor.fontSize": 14, "workbench.colorCustomizations": {"minimap.background": "#000000"},
+    user = {"editor.fontSize": 14,
+            "workbench.colorCustomizations": {"minimap.background": "#000000", "editor.background": "#101010"},
             "editor.tokenColorCustomizations": {"textMateRules": [mine]}}
     settings.write_text(json.dumps(user))
     jsonc = '{\n    // mine\n    "editor.fontSize": 14,\n}'
@@ -293,21 +296,34 @@ def test_vscode(tmp):
     for _ in range(2):  # twice: paletti's rules never pile up
         paletti.apply_vscode(redemption)
     result = json.loads(settings.read_text())
-    colors, rules = result["workbench.colorCustomizations"], result["editor.tokenColorCustomizations"]["textMateRules"]
+    scope = "[Default Dark Modern]"
+    colors, tokens = result["workbench.colorCustomizations"], result["editor.tokenColorCustomizations"]
     assert result["workbench.colorTheme"] == "Default Dark Modern" and "$" not in settings.read_text()
-    assert colors["editor.background"] == redemption["colors"]["bg"] and colors["minimap.background"] == "#000000"
-    assert colors["terminal.ansiBrightWhite"] == redemption["terminal"]["palette"][15]
-    assert rules[-1] == mine and sum(r["name"].startswith("paletti:") for r in rules) == len(rules) - 1
-    semantic = result["editor.semanticTokenColorCustomizations"]["rules"]
-    assert semantic["function"] == redemption["colors"]["accent2"]
+    assert colors[scope]["editor.background"] == redemption["colors"]["bg"]
+    assert colors["editor.background"] == "#101010" and colors["minimap.background"] == "#000000"
+    assert colors[scope]["terminal.ansiBrightWhite"] == redemption["terminal"]["palette"][15]
+    assert tokens["textMateRules"] == [mine] and all(r["name"].startswith("paletti:") for r in tokens[scope]["textMateRules"])
+    semantic = result["editor.semanticTokenColorCustomizations"][scope]
+    assert semantic["enabled"] and semantic["rules"]["function"] == redemption["colors"]["accent2"]
 
     paletti.apply_vscode(paletti.load("nord"))
     result = json.loads(settings.read_text())
     assert result["workbench.colorTheme"] == "Nord"
-    assert {k: v for k, v in result.items() if k not in ("workbench.colorTheme", "editor.semanticTokenColorCustomizations")} == user
-    assert "rules" not in result["editor.semanticTokenColorCustomizations"]
+    assert {k: v for k, v in result.items() if k != "workbench.colorTheme"} == user
     assert json.loads((code / "settings.json.before-paletti").read_text()) == user
     assert (codium / "settings.json").read_text() == jsonc
+
+    # An older version's unscoped Redemption colors go once; the user's own stay.
+    old = json.loads(paletti.render(redemption, "vscode.json"))
+    settings.write_text(json.dumps({**user, "workbench.colorCustomizations": {**old["colors"], "minimap.background": "#000000"},
+                                    "editor.tokenColorCustomizations": {"textMateRules": old["tokens"] + [mine]},
+                                    "editor.semanticTokenColorCustomizations": {"enabled": True, "rules": old["semantic"]}}))
+    paletti.STATE.write_text("redemption")
+    paletti.apply_vscode(paletti.load("nord"))
+    result = json.loads(settings.read_text())
+    assert result["workbench.colorCustomizations"] == {"minimap.background": "#000000"}
+    assert result["editor.tokenColorCustomizations"] == {"textMateRules": [mine]}
+    assert result["editor.semanticTokenColorCustomizations"] == {"enabled": True}
 
 
 def test_swatches(tmp):
@@ -396,21 +412,36 @@ def test_text_editor(tmp):
 
 
 def test_remind_gdm():
-    """The Update button runs --gdm-setup through pkexec; a cancelled password dialog says nothing."""
+    """The Update button runs --gdm-setup through pkexec; a cancelled password dialog says nothing.
+    Each reminder replaces the one before by its saved id."""
+    import io
     import subprocess
-    run = paletti.subprocess.run
-    try:
-        for clicked, code, expected in [("update", 0, "Login screen updated"), ("update", 126, None),
-                                        ("update", 1, "Login screen update failed"), ("", 0, None)]:
-            notes, ran = [], []
-            paletti.sh = lambda *cmd: notes.append(cmd[cmd.index("Paletti") + 1:]) or (clicked if "-A" in cmd else "")
-            paletti.subprocess.run = lambda cmd, **kw: ran.append(cmd) or subprocess.CompletedProcess(cmd, code, "", "boom")
-            paletti.remind_gdm()
-            assert notes[0][-2] == "Login screen is out of date"
-            assert ran == ([] if not clicked else [["pkexec", str(paletti.HOME / ".local/bin/paletti"), "--gdm-setup"]])
-            assert (notes[-1][-2] if len(notes) > 1 else None) == expected, (clicked, code, notes)
-    finally:
-        paletti.subprocess.run = run
+    run, popen = paletti.subprocess.run, paletti.subprocess.Popen
+    with tempfile.TemporaryDirectory() as tmp:
+        paletti.GDM_NOTICE = Path(tmp) / "gdm-notice"
+        try:
+            for clicked, code, expected in [("update", 0, "Login screen updated"), ("update", 126, None),
+                                            ("update", 1, "Login screen update failed"), ("", 0, None)]:
+                notes, ran = [], []
+                replaced = paletti.GDM_NOTICE.exists()
+
+                class Notice:
+                    def __init__(self, cmd, **kw):
+                        notes.append(cmd[cmd.index("Paletti") + 1:])
+                        assert ("-r" in cmd) == replaced and (not replaced or cmd[cmd.index("-r") + 1] == "42")
+                        self.stdout = io.StringIO(f"42\n{clicked}\n")
+
+                    def communicate(self):
+                        return self.stdout.read(), None
+                paletti.subprocess.Popen = Notice
+                paletti.sh = lambda *cmd: notes.append(cmd[cmd.index("Paletti") + 1:]) or ""
+                paletti.subprocess.run = lambda cmd, **kw: ran.append(cmd) or subprocess.CompletedProcess(cmd, code, "", "boom")
+                paletti.remind_gdm()
+                assert notes[0][-2] == "Login screen is out of date" and paletti.GDM_NOTICE.read_text() == "42"
+                assert ran == ([] if not clicked else [["pkexec", str(paletti.HOME / ".local/bin/paletti"), "--gdm-setup"]])
+                assert (notes[-1][-2] if len(notes) > 1 else None) == expected, (clicked, code, notes)
+        finally:
+            paletti.subprocess.run, paletti.subprocess.Popen = run, popen
 
 
 def test_install_vscode_themes():
