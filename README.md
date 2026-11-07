@@ -91,6 +91,10 @@ and with Tela icons it builds every palette's icons in the background, so even a
 switch is instant. Last, it sets up the [login screen](#login-screen-gdm), asking for your
 password once; cancel the dialog to skip it.
 
+`paletti --uninstall` undoes all of it: the link, shortcuts, extension, generated files and the
+login screen go, a file of yours paletti moved aside comes back, and the settings paletti changed
+go back to GNOME's defaults. Your wallpaper and `~/.config/paletti` stay.
+
 ## Usage
 
 ```sh
@@ -248,6 +252,7 @@ A `gtk.css` paletti did not write is moved to `gtk.css.before-paletti` in
 timestamp is added to the name, so no backup is ever overwritten. VS Code's `settings.json`
 is copied once to `settings.json.before-paletti`. The `Islands` shell theme is a generated
 file, rewritten on every switch; the Tela copies are generated too, built once per accent and kept.
+`--uninstall` puts the `.before-paletti` files back and VS Code's original theme.
 
 ## Tests
 

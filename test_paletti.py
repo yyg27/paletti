@@ -448,6 +448,45 @@ def test_ptyxis(tmp):
         [f"paletti-{name}.palette" for name in paletti.names()] + ["mine.palette"])
 
 
+def test_uninstall(tmp):
+    """--uninstall takes out what a switch and --install left: the user's own files come
+    back, generated ones go, the keys paletti set are reset."""
+    calls = []
+    gets = {"enabled-extensions": f"['other@x', '{paletti.EXTENSION_UUID}']",
+            "custom-keybindings": f"['/mine/', '{paletti.KEYBINDING_PATH}', '{paletti.WALLPAPER_KEYBINDING_PATH}']",
+            "icon-theme": "'Tela-circle-paletti-a7c080-t20-dark'", "default-profile-uuid": "'abc'", "default": "'xyz'"}
+    paletti.sh = lambda *cmd: calls.append(cmd) or (gets.get(cmd[-1], "") if cmd[:2] == ("gsettings", "get") else "")
+    paletti.start_icons = lambda name: None
+    paletti.HOME, paletti.EXTENSIONS, paletti.GDM_HOME = tmp, tmp / "extensions", tmp / "no-gdm"
+    paletti.THEME_CSS, paletti.STATE, paletti.CONFIG = tmp / "themes/Islands/gnome-shell/gnome-shell.css", tmp / "state/current", tmp / "config.toml"
+    paletti.GTK_CSS = {"gtk4.css": tmp / "gtk-4.0/gtk.css"}
+    (tmp / "gtk-4.0").mkdir()
+    (tmp / "gtk-4.0/gtk.css").write_text("mine")
+    code = tmp / "vscode"
+    code.mkdir()
+    paletti.VSCODE_DIRS = [code]
+    user = {"editor.fontSize": 14, "workbench.colorTheme": "Solarized Dark"}
+    (code / "settings.json").write_text(json.dumps(user))
+    (tmp / ".local/bin").mkdir(parents=True)
+    (tmp / ".local/bin/paletti").symlink_to(paletti.SCRIPT)
+    paletti.EXTENSIONS.mkdir()
+    (paletti.EXTENSIONS / paletti.EXTENSION_UUID).symlink_to(paletti.HERE / "extension")
+    (tmp / "Tela-circle-paletti-a7c080-t20").mkdir()
+    paletti.apply("redemption")  # no ready-made VS Code theme: paletti's own colors go in
+
+    paletti.uninstall()
+    assert (tmp / "gtk-4.0/gtk.css").read_text() == "mine" and not (tmp / "themes/Islands").exists()
+    assert json.loads((code / "settings.json").read_text()) == user
+    assert not list(paletti.SOURCEVIEW_STYLES.glob("*")) and not list(paletti.PTYXIS_PALETTES.glob("*"))
+    assert not paletti.STATE.parent.exists() and not list(tmp.glob("Tela-circle-paletti-*"))
+    assert not (tmp / ".local/bin/paletti").is_symlink() and not (paletti.EXTENSIONS / paletti.EXTENSION_UUID).is_symlink()
+    assert ("gsettings", "set", "org.gnome.shell", "enabled-extensions", "['other@x']") in calls
+    assert ("gsettings", "set", paletti.KEYBINDING_SCHEMA, "custom-keybindings", "['/mine/']") in calls
+    assert ("gsettings", "set", "org.gnome.desktop.interface", "icon-theme", "Tela-circle-dark") in calls
+    assert ("dconf", "reset", "/org/gnome/terminal/legacy/profiles:/:xyz/palette") in calls
+    assert ("gsettings", "reset", "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/abc/", "palette") in calls
+
+
 def test_text_editor(tmp):
     """Every palette's scheme loads in GtkSourceView with the palette's colors, and is chosen by id."""
     import gi
@@ -571,7 +610,7 @@ if __name__ == "__main__":
     for test in [test_variants, test_papirus, test_tela, test_wallpaper, test_interrupted_swap,
                  test_broken_palette, test_broken_config, test_gtk_backup, test_firefox, test_tela_cleanup, test_swatches, test_gdm,
                  test_other_apps, test_gdm_outdated, test_text_editor,
-                 test_vscode, test_install_gdm, test_stale_reminder, test_ptyxis]:
+                 test_vscode, test_install_gdm, test_stale_reminder, test_ptyxis, test_uninstall]:
         with tempfile.TemporaryDirectory() as tmp:
             paletti.ICON_DIRS = [Path(tmp)]
             paletti.FIREFOX_DIRS = [Path(tmp) / "firefox"]  # apply never touches the real profile

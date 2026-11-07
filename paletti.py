@@ -5,6 +5,7 @@
     paletti everforest   switch to a specific theme
     paletti --list       list themes
     paletti --install    ~/.local/bin/paletti symlink + Super+Y / Super+Shift+Y shortcuts
+    paletti --uninstall  undo all of it; generated files go, settings back to GNOME's defaults
 
     paletti --next-wallpaper            next wallpaper of the current palette
     paletti --wallpaper default|chosen|keep
@@ -102,6 +103,21 @@ TRANSITION_MS = (350, 800)
 
 KEYBINDING_SCHEMA = "org.gnome.settings-daemon.plugins.media-keys"
 KEYBINDING_PATH = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/paletti/"
+WALLPAPER_KEYBINDING_PATH = KEYBINDING_PATH.replace("/paletti/", "/paletti-wallpaper/")
+
+# What a switch sets, by name, so --uninstall can reset the same keys. A value is a
+# color role or a fixed value (Dash to Dock), or a template over the colors (Terminal).
+USER_THEME = ("user-theme@gnome-shell-extensions.gcampax.github.com", "org.gnome.shell.extensions.user-theme")
+DOCK = ("dash-to-dock@micxgx.gmail.com", "org.gnome.shell.extensions.dash-to-dock")
+DOCK_KEYS = {"custom-background-color": "true", "background-color": "bg",  # opacity is tuned by hand, left alone
+             "custom-theme-customize-running-dots": "true", "custom-theme-running-dots-color": "accent",
+             "custom-theme-running-dots-border-color": "accent"}
+BLUR_PARTS = ["panel", "popup", "dash-to-dock"]
+TERMINAL_KEYS = {"use-theme-colors": "false", "background-color": "'{bg}'", "foreground-color": "'{fg}'",
+                 "bold-color-same-as-fg": "true", "cursor-colors-set": "true",
+                 "cursor-background-color": "'{fg}'", "cursor-foreground-color": "'{bg}'",
+                 "highlight-colors-set": "true", "highlight-background-color": "'{surface}'",
+                 "highlight-foreground-color": "'{fg}'", "palette": "{palette}"}
 # Flatpak apps read GTK colors only from folders shared into their sandbox.
 FLATPAK_GTK = ["xdg-config/gtk-3.0", "xdg-config/gtk-4.0"]
 
@@ -152,11 +168,11 @@ def sh(*cmd):
     return subprocess.run(cmd, capture_output=True, text=True).stdout.strip()
 
 
-def ext_gset(uuid, schema, key, value):
+def ext_gsettings(uuid, *args):
     """Extension schemas are not installed system-wide, so --schemadir is required."""
     schemas = EXTENSIONS / uuid / "schemas"
     if schemas.is_dir():
-        sh("gsettings", "--schemadir", str(schemas), "set", schema, key, value)
+        sh("gsettings", "--schemadir", str(schemas), *args)
 
 
 def find_icon_theme(name):
@@ -465,27 +481,22 @@ def apply(name):
     # Shell: write the CSS, then the extension freezes the screen and reloads the theme.
     THEME_CSS.parent.mkdir(parents=True, exist_ok=True)
     THEME_CSS.write_text(render(palette))
-    user_theme = ("user-theme@gnome-shell-extensions.gcampax.github.com",
-                  "org.gnome.shell.extensions.user-theme", "name")
-    ext_gset(*user_theme, "Islands")  # a no-op unless another theme was set
+    uuid, schema = USER_THEME
+    ext_gsettings(uuid, "set", schema, "name", "Islands")  # a no-op unless another theme was set
     reloaded = sh("gdbus", "call", "--session", "--dest", "org.gnome.Shell", "--object-path", "/io/paletti/Transition",
                   "--method", "io.paletti.Transition.Reload", *map(str, TRANSITION_MS)) == "()"
     if not reloaded:  # no extension (or not loaded yet): reload by clearing and resetting user-theme
-        ext_gset(*user_theme, "")
-        ext_gset(*user_theme, "Islands")
+        ext_gsettings(uuid, "set", schema, "name", "")
+        ext_gsettings(uuid, "set", schema, "name", "Islands")
 
-    # Dock: color and running dots. Opacity is left alone, it is tuned by hand.
-    dock = ("dash-to-dock@micxgx.gmail.com", "org.gnome.shell.extensions.dash-to-dock")
-    ext_gset(*dock, "custom-background-color", "true")
-    ext_gset(*dock, "background-color", c["bg"])
-    ext_gset(*dock, "custom-theme-customize-running-dots", "true")
-    ext_gset(*dock, "custom-theme-running-dots-color", c["accent"])
-    ext_gset(*dock, "custom-theme-running-dots-border-color", c["accent"])
+    # Dock: color and running dots.
+    for key, value in DOCK_KEYS.items():
+        ext_gsettings(DOCK[0], "set", DOCK[1], key, c.get(value, value))
 
     # Blur my Shell draws its own blurred shapes behind the top bar, menus and dock.
     # They don't match the islands and corners above and show around them.
-    for part in ["panel", "popup", "dash-to-dock"]:
-        ext_gset("blur-my-shell@aunetx", f"org.gnome.shell.extensions.blur-my-shell.{part}", "blur", "false")
+    for part in BLUR_PARTS:
+        ext_gsettings("blur-my-shell@aunetx", "set", f"org.gnome.shell.extensions.blur-my-shell.{part}", "blur", "false")
 
     # GNOME accent color and apps; newly opened apps pick up the new colors.
     sh("gsettings", "set", "org.gnome.desktop.interface", "accent-color", palette["gnome_accent"])
@@ -509,29 +520,16 @@ def apply(name):
     # GNOME Terminal default profile.
     profile = sh("gsettings", "get", "org.gnome.Terminal.ProfilesList", "default").strip("'")
     if profile:
-        base = f"/org/gnome/terminal/legacy/profiles:/:{profile}/"
-        terminal = {
-            "use-theme-colors": "false",
-            "background-color": f"'{c['bg']}'",
-            "foreground-color": f"'{c['fg']}'",
-            "bold-color-same-as-fg": "true",
-            "cursor-colors-set": "true",
-            "cursor-background-color": f"'{c['fg']}'",
-            "cursor-foreground-color": f"'{c['bg']}'",
-            "highlight-colors-set": "true",
-            "highlight-background-color": f"'{c['surface']}'",
-            "highlight-foreground-color": f"'{c['fg']}'",
-            "palette": str(palette["terminal"]["palette"]),
-        }
-        for key, value in terminal.items():
-            sh("dconf", "write", base + key, value)
+        for key, value in TERMINAL_KEYS.items():
+            sh("dconf", "write", f"/org/gnome/terminal/legacy/profiles:/:{profile}/{key}",
+               value.format(**c, palette=palette["terminal"]["palette"]))
 
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(name)
     start_icons(name)
 
 
-def apply_vscode(palette):
+def apply_vscode(palette, folders=None):
     """Sets VS Code's color theme in settings.json, which VS Code reloads by itself.
     A palette with a ready-made VS Code theme (vscode_theme) just switches to it;
     one without gets the built-in dark theme with paletti's interface and syntax
@@ -545,7 +543,7 @@ def apply_vscode(palette):
         legacy = json.loads(render(tomllib.loads((PALETTES / f"{saved_name()}.toml").read_text()), "vscode.json"))
     except (OSError, KeyError, TypeError, ValueError):  # no or a broken previous palette
         legacy = {"colors": {}, "semantic": {}}
-    for folder in VSCODE_DIRS:
+    for folder in folders or VSCODE_DIRS:
         target = folder / "settings.json"
         if not target.exists():
             continue
@@ -633,6 +631,15 @@ def write_generated(target, text):
             backup = target.with_name(f"{target.name}.before-paletti.{time.time_ns()}")
         target.rename(backup)
     target.write_text(text)
+
+
+def restore_generated(target):
+    """Undoes write_generated: paletti's file goes, and the user's own comes back."""
+    if target.exists() and target.read_text().startswith("/* paletti"):
+        target.unlink()
+    backup = target.with_name(f"{target.name}.before-paletti")
+    if backup.exists() and not target.exists():
+        backup.rename(target)
 
 
 def firefox_profiles():
@@ -887,7 +894,7 @@ def install():
 
     # Existing custom shortcuts are kept, only paletti's are added.
     shortcuts = [(KEYBINDING_PATH, "Paletti", str(link), "<Super>y"),
-                 (KEYBINDING_PATH.replace("/paletti/", "/paletti-wallpaper/"), "Paletti wallpaper",
+                 (WALLPAPER_KEYBINDING_PATH, "Paletti wallpaper",
                   f"{link} --next-wallpaper", "<Super><Shift>y")]
     paths = ast.literal_eval(sh("gsettings", "get", KEYBINDING_SCHEMA, "custom-keybindings").removeprefix("@as "))
     new_paths = [path for path, *_ in shortcuts if path not in paths]
@@ -918,6 +925,76 @@ def install_gdm():
     print("Setting up the login screen, this asks for your password once.")
     if subprocess.run(["pkexec", str(HOME / ".local/bin/paletti"), "--gdm-setup"]).returncode in (126, 127):
         print("Login screen not set up; later: sudo ~/.local/bin/paletti --gdm-setup")
+
+
+def uninstall():
+    """Undoes --install and the switches: the link, shortcuts and extension go, generated
+    files go (a file of the user's that paletti moved aside comes back), and what paletti
+    set goes back to GNOME's default. The wallpaper and ~/.config/paletti stay."""
+    if GDM_HOME.is_dir():  # first, while this script can still run as root by its own path
+        print("Removing the login screen theme, this asks for your password once.")
+        if subprocess.run(["pkexec", str(SCRIPT), "--gdm-remove"]).returncode != 0:
+            print("Login screen left as it is; later: sudo paletti.py --gdm-remove")
+
+    link = HOME / ".local/bin/paletti"
+    if link.is_symlink():
+        link.unlink()
+    if (EXTENSIONS / EXTENSION_UUID).is_symlink():
+        (EXTENSIONS / EXTENSION_UUID).unlink()
+    enabled = ast.literal_eval(sh("gsettings", "get", "org.gnome.shell", "enabled-extensions").removeprefix("@as "))
+    if EXTENSION_UUID in enabled:
+        sh("gsettings", "set", "org.gnome.shell", "enabled-extensions", str([e for e in enabled if e != EXTENSION_UUID]))
+    ours = [KEYBINDING_PATH, WALLPAPER_KEYBINDING_PATH]
+    paths = ast.literal_eval(sh("gsettings", "get", KEYBINDING_SCHEMA, "custom-keybindings").removeprefix("@as "))
+    if any(path in paths for path in ours):
+        sh("gsettings", "set", KEYBINDING_SCHEMA, "custom-keybindings", str([p for p in paths if p not in ours]))
+    for path in ours:
+        sh("dconf", "reset", "-f", path)
+
+    # Shell, dock, accent color and apps.
+    ext_gsettings(USER_THEME[0], "reset", USER_THEME[1], "name")
+    shutil.rmtree(THEME_CSS.parent.parent, ignore_errors=True)
+    for key in DOCK_KEYS:
+        ext_gsettings(DOCK[0], "reset", DOCK[1], key)
+    for part in BLUR_PARTS:
+        ext_gsettings("blur-my-shell@aunetx", "reset", f"org.gnome.shell.extensions.blur-my-shell.{part}", "blur")
+    sh("gsettings", "reset", "org.gnome.desktop.interface", "accent-color")
+    for target in GTK_CSS.values():
+        restore_generated(target)
+    for profile in firefox_profiles():  # user.js keeps the pref: it only allows a userChrome.css
+        restore_generated(profile / "chrome/userChrome.css")
+    current = saved_name()
+    palette = load(current if current in names() else names()[0])  # VS Code: only to take paletti's colors out
+    for folder in VSCODE_DIRS:
+        backup = folder / "settings.json.before-paletti"
+        try:
+            theme = json.loads(backup.read_text() or "{}").get("workbench.colorTheme", "Default Dark Modern")
+        except (OSError, json.JSONDecodeError, AttributeError):
+            theme = "Default Dark Modern"  # VS Code's own default
+        apply_vscode({**palette, "vscode_theme": theme}, [folder])
+    sh("gsettings", "reset", "org.gnome.TextEditor", "style-scheme")
+    remove_generated(SOURCEVIEW_STYLES, ".xml")
+    profile = sh("gsettings", "get", "org.gnome.Ptyxis", "default-profile-uuid").strip("'")
+    if profile:
+        sh("gsettings", "reset", f"org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/{profile}/", "palette")
+    remove_generated(PTYXIS_PALETTES, ".palette")
+    profile = sh("gsettings", "get", "org.gnome.Terminal.ProfilesList", "default").strip("'")
+    if profile:
+        for key in TERMINAL_KEYS:
+            sh("dconf", "reset", f"/org/gnome/terminal/legacy/profiles:/:{profile}/{key}")
+    if shutil.which("flatpak"):
+        sh("flatpak", "override", "--user", *(f"--nofilesystem={path}" for path in FLATPAK_GTK))
+
+    # Icons: back to the Tela paletti's copies were made from, then the copies go.
+    theme = sh("gsettings", "get", "org.gnome.desktop.interface", "icon-theme").strip("'")
+    if theme.startswith("Tela-circle-paletti"):
+        sh("gsettings", "set", "org.gnome.desktop.interface", "icon-theme",
+           "Tela-circle-dark" if theme.endswith("-dark") else "Tela-circle")
+    for path in ICON_DIRS[0].glob("Tela-circle-paletti-*"):
+        shutil.rmtree(path)
+    (ICON_DIRS[0] / ".paletti-tela.lock").unlink(missing_ok=True)
+    shutil.rmtree(STATE.parent, ignore_errors=True)
+    print(f"paletti removed. The wallpaper and {CONFIG.parent} stay; delete this checkout to finish.")
 
 
 def prebuild_icons():
@@ -1131,6 +1208,8 @@ def main(args):
         print(json.dumps({name: swatches(name) for name in names()}))
     elif args == ["--install"]:
         install()
+    elif args == ["--uninstall"]:
+        uninstall()
     elif args == ["--prebuild-icons"]:  # internal, started by --install
         prebuild_icons()
     elif len(args) == 2 and args[0] == "--icons" and args[1] in names():  # internal, see start_icons
