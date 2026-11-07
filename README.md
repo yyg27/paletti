@@ -254,6 +254,8 @@ file, rewritten on every switch; the Tela copies are generated too, built once p
 python3 test_paletti.py
 ```
 
+GitHub Actions runs them on every push (`.github/workflows/test.yml`).
+
 Covers icon recoloring on fake icon folders (Tela copies and their cleanup, apps
 Tela has no icon for), wallpapers, palette and config checks, the `gtk.css` backup,
 Firefox, VS Code settings, the Quick Settings swatches and the login screen theme

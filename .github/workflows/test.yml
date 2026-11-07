@@ -1,0 +1,10 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gdkpixbuf-2.0 gir1.2-gtksource-5
+      # The system Python, where PyGObject is installed. Tela and GDM tests skip without them.
+      - run: /usr/bin/python3 test_paletti.py
