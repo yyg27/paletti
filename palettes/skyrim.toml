@@ -1,5 +1,5 @@
 name = "Skyrim"
-description = ["Khajiit has themes, if you have taste.", "Hey, you. You're finally themed."]
+description = ["Khajiit has themes, if you have taste.", "Hey, you. You're finally themed.", "I used to be a software engineer like you. Then I took an AI in the knee."]
 gnome_accent = "blue"
 icon_color = ["blue", "nordic"]
 icon_tint = 0.2
