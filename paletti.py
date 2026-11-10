@@ -537,7 +537,8 @@ def apply_vscode(palette, folders=None):
     never touched. The original is backed up once."""
     ours = json.loads(render(palette, "vscode.json"))
     theme = palette.get("vscode_theme")
-    scope = "[Default Dark Modern]"
+    # VS Code 1.145 renamed the built-in theme to "Dark Modern" (and rewrites the setting); one key covers both.
+    scope = "[Default Dark Modern][Dark Modern]"
     # Older versions wrote paletti's colors unscoped; the previous palette's are taken out once.
     try:
         legacy = json.loads(render(tomllib.loads((PALETTES / f"{saved_name()}.toml").read_text()), "vscode.json"))
@@ -573,7 +574,8 @@ def apply_vscode(palette, folders=None):
                                        if not (isinstance(r, dict) and str(r.get("name", "")).startswith("paletti:"))]
         for section, mine in [(colors, ours["colors"]), (tokens, {"textMateRules": ours["tokens"]}),
                               (semantic, {"enabled": True, "rules": ours["semantic"]})]:
-            section.pop(scope, None)
+            for key in (scope, "[Default Dark Modern]"):  # the second: what older versions wrote
+                section.pop(key, None)
             if not theme:
                 section[scope] = mine
         settings["workbench.colorTheme"] = theme or "Default Dark Modern"

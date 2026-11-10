@@ -299,7 +299,7 @@ def test_vscode(tmp):
     for _ in range(2):  # twice: paletti's rules never pile up
         paletti.apply_vscode(redemption)
     result = json.loads(settings.read_text())
-    scope = "[Default Dark Modern]"
+    scope = "[Default Dark Modern][Dark Modern]"
     colors, tokens = result["workbench.colorCustomizations"], result["editor.tokenColorCustomizations"]
     assert result["workbench.colorTheme"] == "Default Dark Modern" and "$" not in settings.read_text()
     assert colors[scope]["editor.background"] == redemption["colors"]["bg"]
@@ -335,6 +335,11 @@ def test_vscode(tmp):
     result = json.loads(settings.read_text())
     assert list(result["workbench.colorCustomizations"]) == [scope]
     assert list(result["editor.tokenColorCustomizations"]) == [scope]
+
+    # The block older versions scoped to "Default Dark Modern" alone is replaced, not kept beside it.
+    settings.write_text(json.dumps({**user, "workbench.colorCustomizations": {"[Default Dark Modern]": {"editor.background": "#000000"}}}))
+    paletti.apply_vscode(redemption)
+    assert list(json.loads(settings.read_text())["workbench.colorCustomizations"]) == [scope]
 
 
 def test_swatches(tmp):
