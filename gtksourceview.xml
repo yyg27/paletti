@@ -24,19 +24,19 @@
   <style name="def:comment" foreground="$muted" italic="true"/>
   <style name="def:shebang" foreground="$muted" bold="true"/>
   <style name="def:doc-comment-element" foreground="$muted" bold="true"/>
-  <style name="def:keyword" foreground="$accent"/>
-  <style name="def:statement" foreground="$accent"/>
-  <style name="def:builtin" foreground="$accent2"/>
-  <style name="def:function" foreground="$accent2"/>
-  <style name="def:type" foreground="$heading"/>
+  <style name="def:keyword" foreground="$syntax_keyword"/>
+  <style name="def:statement" foreground="$syntax_keyword"/>
+  <style name="def:builtin" foreground="$syntax_function"/>
+  <style name="def:function" foreground="$syntax_function"/>
+  <style name="def:type" foreground="$syntax_type"/>
   <style name="def:identifier" foreground="$fg"/>
   <style name="def:operator" foreground="$fg"/>
-  <style name="def:string" foreground="$ansi2"/>
-  <style name="def:special-char" foreground="$ansi6"/>
-  <style name="def:number" foreground="$ansi3"/>
-  <style name="def:constant" foreground="$ansi3"/>
-  <style name="def:boolean" foreground="$ansi3"/>
-  <style name="def:special-constant" foreground="$ansi3"/>
+  <style name="def:string" foreground="$syntax_string"/>
+  <style name="def:special-char" foreground="$syntax_escape"/>
+  <style name="def:number" foreground="$syntax_number"/>
+  <style name="def:constant" foreground="$syntax_number"/>
+  <style name="def:boolean" foreground="$syntax_number"/>
+  <style name="def:special-constant" foreground="$syntax_number"/>
   <style name="def:preprocessor" foreground="$ansi5"/>
   <style name="def:error" foreground="$ansi1" underline="error"/>
   <style name="def:warning" foreground="$ansi3" underline="error"/>
@@ -45,7 +45,7 @@
   <style name="def:heading" foreground="$heading" bold="true"/>
   <style name="def:emphasis" italic="true"/>
   <style name="def:strong-emphasis" bold="true"/>
-  <style name="def:inline-code" foreground="$ansi2"/>
+  <style name="def:inline-code" foreground="$syntax_string"/>
   <style name="def:link-text" foreground="$accent"/>
   <style name="def:link-destination" foreground="$muted" underline="single"/>
   <style name="def:insertion" foreground="$ansi2"/>

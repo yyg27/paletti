@@ -228,12 +228,12 @@ def test_window_buttons():
 def test_broken_palette(tmp):
     paletti.sh = lambda *cmd: ""
     paletti.PALETTES = tmp
-    (tmp / "broken.toml").write_text('name = "Broken"\nicon_tint = "0.2"\n[colors]\nbg = "#fff"\n')
+    (tmp / "broken.toml").write_text('name = "Broken"\nicon_tint = "0.2"\n[colors]\nbg = "#fff"\n[syntax]\nfunction = "gold"\nkeywords = "#ffffff"\n[vscode]\n"statusBar.background" = "gold"\n')
     try:
         paletti.load("broken")
         raise AssertionError("broken palette was accepted")
     except SystemExit as e:
-        for problem in ["gnome_accent", "bg_alt", "'#fff'", "16", "icon_tint must be a number"]:
+        for problem in ["gnome_accent", "bg_alt", "'#fff'", "16", "icon_tint must be a number", "'gold'", "no keywords", "[vscode] statusBar.background"]:
             assert problem in str(e), (problem, str(e))
     finally:
         paletti.PALETTES = paletti.HERE / "palettes"
@@ -308,6 +308,15 @@ def test_vscode(tmp):
     assert tokens["textMateRules"] == [mine] and all(r["name"].startswith("paletti:") for r in tokens[scope]["textMateRules"])
     semantic = result["editor.semanticTokenColorCustomizations"][scope]
     assert semantic["enabled"] and semantic["rules"]["function"] == redemption["colors"]["accent2"]
+    paletti.apply_vscode({**redemption, "vscode": {"statusBar.background": "#a8956a"}})  # a palette's own VS Code colors win
+    assert json.loads(settings.read_text())["workbench.colorCustomizations"][scope]["statusBar.background"] == "#a8956a"
+    skyrim = paletti.load("skyrim")  # [syntax] overrides the roles, the rest keep theirs
+    rendered = json.loads(paletti.render(skyrim, "vscode.json"))
+    assert rendered["semantic"]["function"] == skyrim["syntax"]["function"] != skyrim["colors"]["accent2"]
+    paletti.apply_vscode(skyrim)  # [vscode] role names recolor the template, VS Code's names go on top
+    mine = json.loads(settings.read_text())["workbench.colorCustomizations"][scope]
+    assert mine["editor.background"] == skyrim["vscode"]["bg"] != skyrim["colors"]["bg"]
+    assert mine["statusBar.border"] == skyrim["vscode"]["statusBar.border"]
 
     paletti.apply_vscode(paletti.load("nord"))
     result = json.loads(settings.read_text())
@@ -508,7 +517,8 @@ def test_text_editor(tmp):
         manager.force_rescan()
         scheme = manager.get_scheme(f"paletti-{name}")
         assert scheme is not None, name
-        assert scheme.get_style("def:keyword").props.foreground.lower() == palette["colors"]["accent"].lower()
+        keyword = palette.get("syntax", {}).get("keyword", palette["colors"]["accent"])
+        assert scheme.get_style("def:keyword").props.foreground.lower() == keyword.lower()
         assert scheme.get_style("text").props.background.lower() == palette["colors"]["bg"].lower()
         assert calls[-1] == ("gsettings", "set", "org.gnome.TextEditor", "style-scheme", f"paletti-{name}")
 

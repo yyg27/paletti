@@ -24,3 +24,33 @@ muted         = "#9a8f78"
 [terminal]
 palette = ["#26231D", "#B5634F", "#8FA06A", "#C9B88A", "#6F94B4", "#A5849F", "#86AFA8", "#D8CCB0",
            "#4A4437", "#C97A63", "#A6B884", "#D8CA9F", "#8FB8D8", "#BA9DB5", "#A2C7C0", "#ECE3CF"]
+
+# VS Code: the Anniversary Edition cover's gold on Nord's frost and snow.
+[syntax]
+keyword   = "#c9b98a"
+function  = "#88c0d0"
+type      = "#81a1c1"
+tag       = "#c9b98a"
+string    = "#a3be8c"
+escape    = "#5e81ac"
+number    = "#ebcb8b"
+parameter = "#d8dee9"
+property  = "#8fbcbb"
+
+# Role names recolor VS Code only; the frame stays dark, with the cover's gold only as thin lines.
+[vscode]
+bg            = "#1f232b"
+bg_alt        = "#1a1d24"
+fg            = "#d8dee9"
+surface       = "#2e3440"
+surface_hover = "#3b4252"
+card          = "#262b34"
+card_hover    = "#2e3440"
+muted         = "#616e88"
+accent        = "#c9b98a"
+accent_hover  = "#d8caa0"
+heading       = "#b6a57a"
+"titleBar.border"          = "#9d8e6c"
+"statusBar.border"         = "#9d8e6c"
+"statusBar.foreground"     = "#b6a57a"
+"activityBar.activeBorder" = "#c9b98a"

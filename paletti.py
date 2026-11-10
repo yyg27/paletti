@@ -89,6 +89,9 @@ SYSTEM_APPS = ["org.gnome.Nautilus", "org.gnome.Settings", "org.gnome.Terminal",
                "org.gnome.Logs", "org.gnome.Extensions", "org.gnome.FileRoller", "org.gnome.Characters"]
 HEX = re.compile(rb"#([0-9a-fA-F]{6})\b")
 HEX_COLOR = re.compile(r"#[0-9a-fA-F]{6}")
+# Code colors in VS Code and Text Editor, by default from these roles; a palette's [syntax] table overrides them with #rrggbb.
+SYNTAX = {"keyword": "accent", "function": "accent2", "type": "heading", "tag": "accent",
+          "string": "ansi2", "escape": "ansi6", "number": "ansi3", "parameter": "ansi5", "property": "ansi6"}
 
 
 def saturated(hex_color):
@@ -141,6 +144,12 @@ def load(name):
         ("icon_tint", (int, float), "a number"), ("icon_grayscale", bool, "true or false"),
         ("wallpaper", str, "a path in quotes"), ("vscode_theme", str, "a name in quotes")]
         if key in palette and not isinstance(palette[key], types)]
+    syntax = palette.get("syntax", {})
+    problems += [f"[syntax] has no {key}, only {', '.join(SYNTAX)}" for key in syntax if key not in SYNTAX]
+    problems += [f"[syntax] {key} = {value!r} is not #rrggbb" for key, value in syntax.items()
+                 if not HEX_COLOR.fullmatch(str(value))]
+    problems += [f"[vscode] {key} = {value!r} is not #rrggbb" for key, value in palette.get("vscode", {}).items()
+                 if not HEX_COLOR.fullmatch(str(value))]
     if len(terminal) != 16 or not all(HEX_COLOR.fullmatch(str(value)) for value in terminal):
         problems.append("[terminal] palette needs 16 #rrggbb colors")
     if problems:
@@ -161,6 +170,8 @@ def render(palette, template="shell.css", **extra):
     for role, hex_color in palette["colors"].items():
         h = hex_color.lstrip("#")
         values[f"{role}_rgb"] = ", ".join(str(int(h[i:i + 2], 16)) for i in (0, 2, 4))
+    syntax = palette.get("syntax", {})
+    values.update({f"syntax_{key}": syntax.get(key, values[role]) for key, role in SYNTAX.items()})
     return Template((HERE / template).read_text()).substitute(values, **extra)
 
 
@@ -535,7 +546,11 @@ def apply_vscode(palette, folders=None):
     one without gets the built-in dark theme with paletti's interface and syntax
     colors, scoped to that theme only, so the user's own colors and token rules are
     never touched. The original is backed up once."""
-    ours = json.loads(render(palette, "vscode.json"))
+    # A palette's own VS Code colors: role names (bg, accent...) recolor the template, VS Code's names go on top.
+    own = palette.get("vscode", {})
+    roles = {key: value for key, value in own.items() if key in ROLES}
+    ours = json.loads(render({**palette, "colors": {**palette["colors"], **roles}}, "vscode.json"))
+    ours["colors"].update({key: value for key, value in own.items() if key not in ROLES})
     theme = palette.get("vscode_theme")
     # VS Code 1.145 renamed the built-in theme to "Dark Modern" (and rewrites the setting); one key covers both.
     scope = "[Default Dark Modern][Dark Modern]"

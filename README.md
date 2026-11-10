@@ -174,6 +174,26 @@ Two optional roles go in `[colors]` too:
 | `icons` | Icon recoloring (folders, system apps, app icon tint) | `accent` |
 | `on_accent` | Text on accent fills (active toggles, today, accent buttons) | `bg` |
 
+A palette without `vscode_theme` can give code its own colors, in VS Code and Text Editor.
+Each is `#rrggbb` and optional; by default they come from the roles:
+
+```toml
+[syntax]   # default role in the comment
+keyword   = "#c9b98a"   # accent
+function  = "#88c0d0"   # accent2
+type      = "#81a1c1"   # heading
+tag       = "#c9b98a"   # accent (JSX and HTML tags)
+string    = "#a3be8c"   # terminal green
+escape    = "#5e81ac"   # terminal cyan
+number    = "#ebcb8b"   # terminal yellow (also attributes)
+parameter = "#d8dee9"   # terminal magenta
+property  = "#8fbcbb"   # terminal cyan
+
+[vscode]   # VS Code only
+bg = "#1f232b"                       # a role name recolors VS Code alone
+"statusBar.border" = "#9d8e6c"       # VS Code's own color names go on top
+```
+
 Templates use `$role`, and `$role_rgb` (`40, 42, 54`) for `rgba()` values.
 
 ## Icons
